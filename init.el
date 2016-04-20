@@ -1,5 +1,5 @@
 (add-to-list 'load-path
-	(expand-file-name "~/.emacs.d/config-files"))
+    (expand-file-name "~/.emacs.d/config-files"))
 ; (require 'init-benchmarking)
 '(:eval (when nyan-mode (list (nyan-create))))
 
@@ -13,6 +13,7 @@
 (require 'init-company)
 ;; ````````` nyan-mode `````````
 (require 'init-nyan-mode)
+
 ;; ````````` auto-save `````````
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
