@@ -1,6 +1,6 @@
 ;; ````````` theme `````````
 (add-to-list 'custom-theme-load-path 
-	"~/.emacs.d/themes/")
+    "~/.emacs.d/themes/")
 (load-theme 'monokai t)
 
 ;; ````````` line number `````````
