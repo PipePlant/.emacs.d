@@ -13,6 +13,8 @@
 (require 'init-company)
 ;; ````````` nyan-mode `````````
 (require 'init-nyan-mode)
+;; ````````` init-flycheck `````````
+(require 'init-flycheck)
 
 ;; ````````` auto-save `````````
 (custom-set-variables
