@@ -1,5 +1,5 @@
 (add-to-list 'load-path
-    (expand-file-name "~/.emacs.d/config-files"))
+    (expand-file-name "~/.emacs.d/lisp"))
 ; (require 'init-benchmarking)
 '(:eval (when nyan-mode (list (nyan-create))))
 
