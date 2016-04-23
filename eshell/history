@@ -1,0 +1,47 @@
+d:
+ll
+ls
+ls -h
+ls -l
+cd Program\ Files/
+cd emacs_config/
+pwd
+~/.emacs.d/jslint-reporter.bat test.js
+cd ./.emacs.d/jslint-reporter/
+ll
+ls
+jslint-reporter.bat test.js
+~/.emacs.d/jslint-reporter.bat test.js
+ls
+jslint-reporter.bat
+~
+ls
+~/.emacs.d/jslint-reporter/jslint-reporter.bat test.js
+~/.emacs.d/jslint-reporter.bat test.js
+~/.emacs.d/jslint-reporter test.js
+~/.emacs.d/jslint-reporter.bat test.js
+pwd
+cd D
+cd D:
+ll
+ls
+ls
+cd D:/Program\ Files/emacs_config/
+pwd
+cd .emacs.d/
+ls
+cd jslint-reporter/
+ls
+jslint-reporter.bat test.js 
+jslint-reporter.bat test.js 
+cd D:
+ls
+jslint-reporter.bat test.js 
+jslint-reporter.bat test.js 
+jslint-reporter.bat test.js 
+jslint-reporter.bat test.js 
+cd d:
+ls
+jslint-reporter.bat test.js 
+cd d:
+jslint-reporter.bat tesp.pl 
