@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 d:
 ll
 ls
@@ -45,3 +46,10 @@ ls
 jslint-reporter.bat test.js 
 cd d:
 jslint-reporter.bat tesp.pl 
+=======
+ls
+cd ..
+cd Program\ Files/
+cd emacs_config/.emacs.d/
+ls
+>>>>>>> 7b716d75742412154880df53c865892834b08060
