@@ -53,3 +53,13 @@ cd Program\ Files/
 cd emacs_config/.emacs.d/
 ls
 >>>>>>> 7b716d75742412154880df53c865892834b08060
+jslint-reporter.bat asd.py 
+cd D:
+jslint-reporter.bat test.py 
+cd D:
+jslint-reporter.bat test.c
+cd d:
+jslint-reporter.bat text.py
+jslint-reporter.bat test.py 
+cd D:
+jslint-reporter.bat wrapper.js 
