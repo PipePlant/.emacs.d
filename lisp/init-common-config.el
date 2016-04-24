@@ -45,4 +45,10 @@
 (setq inhibit-startup-message t)
 (setq gnus-inhibit-startup-message t)
 
+;; ````````` set TAB `````````
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
+(setq tab-width 4)
+(setq-default tab-always-indent nil)
+
 (provide 'init-common-config)
