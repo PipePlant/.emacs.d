@@ -9,8 +9,8 @@
 
 ;; change array&hash syntax color
 (custom-set-faces
-    '(cperl-array-face ((t (:foreground "green" :weight bold))))
-    '(cperl-hash-face ((t (:foreground "Red" :slant italic :weight bold))))
-    )
+    '(cperl-array-face ((t (:foreground "deep sky blue"))))
+    '(cperl-hash-face ((t (:foreground "spring green"))))
+)
 
 (provide 'init-cperl-mode)

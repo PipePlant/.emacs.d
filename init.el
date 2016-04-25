@@ -17,6 +17,12 @@
 (require 'init-flycheck)
 ;; ````````` electric-pair-mode `````````
 (require 'init-electric-pair-mode)
+;; ````````` cperl-mode `````````
+(require 'init-cperl-mode)
+;; ````````` hs-minor-mode `````````
+(require 'init-hs-minor-mode)
+;; ````````` diredful `````````
+(require 'init-diredful)
 
 ;; ````````` auto-save `````````
 (custom-set-variables
@@ -25,7 +31,6 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(current-language-environment "UTF-8")
- '(display-time-mode t)
  '(show-paren-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
