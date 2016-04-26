@@ -7,6 +7,7 @@
 (add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
 (add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
 
+;; set default tab
 (custom-set-variables
     '(cperl-close-paren-offset 0)
     '(cperl-indent-level 4)

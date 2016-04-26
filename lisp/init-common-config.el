@@ -41,7 +41,7 @@
 (setq-default tab-width 4)
 (setq tab-width 4)
 (setq-default tab-always-indent nil)
-
+;; ````````` show paren symbol `````````
 (show-paren-mode t)
 
 (setq dired-dwim-target t)

@@ -18,11 +18,11 @@
 ;; ````````` electric-pair-mode `````````
 (require 'init-electric-pair-mode)
 ;; ````````` cperl-mode `````````
-;(require 'init-cperl-mode)
+(require 'init-cperl-mode)
 ;; ````````` hs-minor-mode `````````
 (require 'init-hs-minor-mode)
-;; ````````` diredful `````````
-(require 'init-diredful)
+;; ````````` helm `````````
+(require 'init-helm)
 
 ;; ````````` auto-save `````````
 (custom-set-variables
@@ -30,13 +30,10 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(current-language-environment "UTF-8")
- '(show-paren-mode t))
+ '(current-language-environment "UTF-8"))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(cperl-array-face ((t (:foreground "SystemMenuHilight"))))
- '(cperl-hash-face ((t (:foreground "SeaGreen3"))))
- '(cperl-indent-level 4))
+)
