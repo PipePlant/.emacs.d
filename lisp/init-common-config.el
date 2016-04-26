@@ -42,6 +42,10 @@
 (setq tab-width 4)
 (setq-default tab-always-indent nil)
 
+(show-paren-mode t)
+
 (setq dired-dwim-target t)
+
+(setq w32-get-true-file-attributes nil)
 
 (provide 'init-common-config)

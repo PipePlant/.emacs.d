@@ -7,10 +7,16 @@
 (add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
 (add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
 
+(custom-set-variables
+    '(cperl-close-paren-offset 0)
+    '(cperl-indent-level 4)
+)
+
 ;; change array&hash syntax color
 (custom-set-faces
-    '(cperl-array-face ((t (:foreground "deep sky blue"))))
-    '(cperl-hash-face ((t (:foreground "spring green"))))
+    '(cperl-array-face ((t (:foreground "SystemMenuHilight"))))
+    '(cperl-hash-face ((t (:foreground "SeaGreen3"))))
+    '(cperl-indent-level 4)
 )
 
 (provide 'init-cperl-mode)
