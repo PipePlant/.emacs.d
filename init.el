@@ -23,6 +23,8 @@
 (require 'init-hs-minor-mode)
 ;; ````````` helm `````````
 (require 'init-helm)
+;; ````````` ecb `````````
+(require 'init-ecb)
 
 ;; ````````` auto-save `````````
 (custom-set-variables

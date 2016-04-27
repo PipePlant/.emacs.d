@@ -2,13 +2,17 @@
 
 ---
 
+## ToDo List
+- org-mode
+- python development environment
+- php development environment
+
 ## Support language
 This means the language of list has a development environment.
 - perl (cperl-mode)
-- [ToDo] python
-- [ToDo] php
 
 ## Set key for freaure
+
 ### hlem
 >[wiki](https://github.com/emacs-helm/helm/wiki)
 ```lsip

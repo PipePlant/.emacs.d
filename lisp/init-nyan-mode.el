@@ -1,5 +1,8 @@
 '(:eval (when nyan-mode (list (nyan-create))))
+
 (nyan-mode t)
-; (nyan-start-animation);;开始舞动吧（会耗cpu资源）
+;; (nyan-start-animation)
+(custom-set-variables
+    '(nyan-bar-length 20))
 
 (provide 'init-nyan-mode)
