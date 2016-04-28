@@ -35,3 +35,8 @@ This means the language of list has a development environment.
 (define-key yas-minor-mode-map (kbd "TAB") nil)
 (define-key yas-minor-mode-map (kbd "C-c k") 'yas-expand)
 ```
+### ecb
+```lisp
+(global-set-key [f11] 'ecb-activate)
+(global-set-key [f12] 'ecb-deactivate)
+```
