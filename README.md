@@ -13,7 +13,7 @@ This means the language of list has a development environment.
 ## Set key for freaure
 
 ### hlem
->[wiki](https://github.com/emacs-helm/helm/wiki)
+[wiki](https://github.com/emacs-helm/helm/wiki)
 ```lsip
 (global-set-key (kbd "M-x") #'helm-M-x)
 (global-set-key (kbd "C-x r b") #'helm-filtered-bookmarks)
@@ -21,14 +21,15 @@ This means the language of list has a development environment.
 ```
 
 ### hs-minor-mode
->[wiki](https://www.emacswiki.org/emacs/HideShow)
+[wiki](https://www.emacswiki.org/emacs/HideShow)
 ```lisp
 (global-set-key (kbd "C-_") 'toggle-hiding)
 (global-set-key (kbd "C-+") 'toggle-selective-display)
 ```
 
 ### yasnippet
->[wiki](https://www.emacswiki.org/emacs/yasnippet)
+[wiki](https://www.emacswiki.org/emacs/Yasnippet)
+[github](https://github.com/capitaomorte/yasnippet)
 ```lisp
 (define-key yas-minor-mode-map (kbd "<tab>") nil)
 (define-key yas-minor-mode-map (kbd "TAB") nil)
