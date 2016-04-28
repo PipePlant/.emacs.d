@@ -3,7 +3,6 @@
 ---
 
 ## ToDo List
-- org-mode
 - python development environment
 - php development environment
 
