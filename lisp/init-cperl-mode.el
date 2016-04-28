@@ -7,17 +7,20 @@
 (add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
 (add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
 
+(setq cperl-invalid-face nil)
+(setq cperl-highlight-variables-indiscriminately t)
+(setq cperl-font-lock nil)
+
 ;; set default tab
 (custom-set-variables
-    '(cperl-close-paren-offset 0)
-    '(cperl-indent-level 4)
-)
+   '(cperl-close-paren-offset 0)
+   '(cperl-fontify-m-as-s nil)
+   '(cperl-indent-level 4))
 
 ;; change array&hash syntax color
 (custom-set-faces
     '(cperl-array-face ((t (:foreground "SystemMenuHilight"))))
     '(cperl-hash-face ((t (:foreground "SeaGreen3"))))
-    '(cperl-indent-level 4)
-)
+    '(cperl-indent-level 4))
 
 (provide 'init-cperl-mode)

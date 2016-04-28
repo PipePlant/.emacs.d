@@ -32,10 +32,16 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(current-language-environment "UTF-8"))
+ '(cperl-close-paren-offset 0)
+ '(cperl-fontify-m-as-s nil)
+ '(cperl-indent-level 4)
+ '(current-language-environment "UTF-8")
+ '(nyan-bar-length 20))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
-)
+ '(cperl-array-face ((t (:foreground "SystemMenuHilight"))))
+ '(cperl-hash-face ((t (:foreground "SeaGreen3"))))
+ '(cperl-indent-level 4))

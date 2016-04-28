@@ -1,11 +1,9 @@
 <<<<<<< HEAD
-d:/
 d:/Program Files
 d:/Program Files/emacs_config
 d:/Program Files/emacs_config/.emacs.d
 =======
 d:/project
-d:/
 d:/Program Files
 d:/Program Files/emacs_config/.emacs.d
 >>>>>>> 7b716d75742412154880df53c865892834b08060
@@ -16,3 +14,6 @@ d:/Program Files/emacs_config/.emacs.d/jslint-reporter
 d:/Program Files/emacs_config/.emacs.d/jslint-reporter
 e:/
 d:/Program Files/emacs_config/.emacs.d/jslint-reporter
+d:/project/sccs_hycycd/original_data
+d:/
+d:/project/sccs_hycycd
