@@ -1,0 +1,15 @@
+# name: class { ... }
+# key: class
+# --
+package ${1:ClassName};
+
+use base qw(${2:ParentClass});
+
+sub new {
+    my ${3:class} = shift;
+    ${4:class} = ref ${5:class} if ref ${6:class};
+    my $self = bless {}, ${7:class};
+    $self;
+}
+
+1;

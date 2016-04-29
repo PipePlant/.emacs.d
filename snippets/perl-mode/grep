@@ -1,0 +1,4 @@
+# name: grep { ... }
+# key: grep
+# --
+grep {${1:expression}} @${2:array}

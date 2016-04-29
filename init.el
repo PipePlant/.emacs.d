@@ -5,6 +5,8 @@
 (require 'init-common-config)
 ;; ````````` elpa `````````
 (require 'init-elpa)
+;; ````````` theme `````````
+(require 'init-theme)
 ;; ````````` yasnippet `````````
 (require 'init-yasnippet)
 ;; ````````` company `````````
@@ -30,11 +32,16 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(column-number-mode t)
  '(cperl-close-paren-offset 0)
  '(cperl-fontify-m-as-s nil)
  '(cperl-indent-level 4)
  '(current-language-environment "UTF-8")
- '(nyan-bar-length 20))
+ '(display-time-mode t)
+ '(nyan-bar-length 20)
+ '(scroll-bar-mode nil)
+ '(show-paren-mode t)
+ '(size-indication-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

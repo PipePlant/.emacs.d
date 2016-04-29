@@ -1,0 +1,4 @@
+# name: sort { ... }
+# key: sort
+# --
+sort {${1:expression}} @${2:array}

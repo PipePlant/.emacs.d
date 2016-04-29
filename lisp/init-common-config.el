@@ -1,7 +1,3 @@
-;; ````````` theme `````````
-(add-to-list 'custom-theme-load-path 
-    "~/.emacs.d/themes/")
-(load-theme 'monokai t)
 ;; ````````` line number `````````
 (global-linum-mode t)
 ;; ````````` coding by utf-8 `````````
