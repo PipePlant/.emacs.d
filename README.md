@@ -4,11 +4,10 @@
 
 ## ToDo List
 - python development environment
-- php development environment
 
 ## Support language
-This means the language of list has a development environment.
-- perl (cperl-mode)
+- perl (cperl-mode [wiki](https://www.emacswiki.org/emacs/CPerlMode))
+- php (php-mode [wiki](https://www.emacswiki.org/emacs/PhpMode))
 
 ## Set key for freaure
 

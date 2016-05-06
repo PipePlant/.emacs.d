@@ -17,14 +17,17 @@
 (require 'init-flycheck)
 ;; ````````` electric-pair-mode `````````
 (require 'init-electric-pair-mode)
-;; ````````` cperl-mode `````````
-(require 'init-cperl-mode)
 ;; ````````` hs-minor-mode `````````
 (require 'init-hs-minor-mode)
 ;; ````````` helm `````````
 (require 'init-helm)
 ;; ````````` ecb `````````
 (require 'init-ecb)
+
+;; ````````` cperl-mode `````````
+(require 'init-cperl-mode)
+;; ````````` php-mode `````````
+(require 'init-php-mode)
 
 ;; ````````` auto-save `````````
 (custom-set-variables
