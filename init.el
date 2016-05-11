@@ -23,6 +23,8 @@
 (require 'init-helm)
 ;; ````````` ecb `````````
 (require 'init-ecb)
+;; ````````` powerline `````````
+(require 'init-powerline)
 
 ;; ````````` cperl-mode `````````
 (require 'init-cperl-mode)

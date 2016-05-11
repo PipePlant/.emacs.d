@@ -44,4 +44,7 @@
 
 (setq w32-get-true-file-attributes nil)
 
+;; ````````` set cursor `````````
+(setq-default cursor-type 'bar) 
+
 (provide 'init-common-config)
