@@ -1,4 +1,4 @@
 # name: open ( ... )
 # key: open
 # --
-open ${1:FILEHANDLE} ,"${2:MODE}", ${3:file} or die $!
+open ${1:FileHandle} ,"${2:mode}", ${3:file} or die $!;

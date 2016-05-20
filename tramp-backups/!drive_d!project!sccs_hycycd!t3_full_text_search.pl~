@@ -1,0 +1,179 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use Encode;
+use JSON;
+use feature qw (say);
+
+my $json = new JSON;
+my $full_file = "./tmp_data/sccs_hycycd_tidy.txt";
+my $output_file = "./tmp_data/sccs_hycycd_full_text_search.txt";
+my $uwid_file = "./finally_data/sccs_hycycd_word_uwid_list.txt";
+
+# ```````````````````
+open my $UWID ,"<", $uwid_file or die $!;
+
+my %uwidList;
+while (<$UWID>) {
+
+    $_ =~ /(.*)\t(.*)/;
+    $uwidList{$1} = $2;
+}
+
+close $UWID;
+
+# ```````````````````
+open my $FULL ,"<", $full_file or die $!;
+
+my %weightHash;
+while (<$FULL>) {
+
+    my ($word,$line) = SelectUsefulData($_);
+    my $sentence = SpiltSentence($line);
+    my $uwid = $uwidList{$word};
+
+    # ```
+    say "search => $uwid \t $word";
+    foreach my $senPun (@{$sentence}) {
+
+        next if $senPun eq "";
+
+        my $senNoPun = DeletePunctuation($senPun);
+        my $wordSlice = SliceWord($senNoPun);
+
+        foreach my $char (@{$wordSlice}) {
+
+            my $weight = GetWeight($senPun,$senNoPun,$char);
+            
+            my %charHash;
+            $charHash{$weight} = $uwid;
+            push @{$weightHash{$char}},\%charHash;
+        }
+    }
+}
+
+close $FULL;
+
+# ```````````````````
+open my $OUT ,">", $output_file or die $!;
+
+while(my ($key, $val) = each(%weightHash)){
+
+    say $OUT $key."\t".$json->encode($val);
+}
+
+close $OUT;
+
+sub SpiltSentence {
+
+    my $line = shift;
+    
+    $line = SelectUsefulData($line);
+    
+    my @lineData = split/<.+?>/,$line;
+    
+    return \@lineData;
+};
+
+sub SelectUsefulData {
+
+    my $data = shift;
+
+    $data =~ s/<pinyin>.+?<\/pinyin>//g;
+    $data =~ s/<index>.+?<\/index>//g;
+    $data =~ s/<word>(.+?)<\/word>//g;
+    my $word = $1;
+
+    $data =~ s/@//g;
+    $data =~ s/\[例\］//g;
+    $data =~ s/见“(.+?)”/$1/g;
+    $data =~ s/\(\d+\)//g;
+    $data =~ s/juàn//g;
+    $data =~ s/yǐlǐ//g;
+
+    $data =~ s/\s+//g;
+
+    return ($word,$data);
+};
+
+sub DeletePunctuation {
+
+    my $data = shift;
+
+    $data =~ s/。|，|：|；|！|…|？|、|·|．|○|‖//g;
+    $data =~ s/‘|’|“|”|\《|\》|\（|\）|\【|\】\［|\］|\［|\〈|\〉//g;
+    $data =~ s/:|\?|\(|\)|'|"|!|,|\.//g;
+
+    return $data;
+};
+
+sub SliceWord {
+
+    my $sentence = shift;
+    $sentence = decode("utf8",$sentence);
+    
+    my @sliceData = ();
+    my @wordData = split//,$sentence;
+
+    foreach my $num (0 .. $#wordData) {
+
+        my $word1 = encode("utf8",$wordData[$num]);
+        
+        # 一元切分
+        push @sliceData,$word1;
+        
+        # 二元切分
+        if ($num < $#wordData) {
+
+            my $word2 = encode("utf8",$wordData[$num+1]);
+            push @sliceData,$word1.$word2;
+        }
+    }
+
+    return \@sliceData;
+};
+
+sub GetWeight {
+
+    my ($senPun,$senNoPun,$char) = @_;
+    my $weight = 0;
+    
+    # 有符号的段落切分，计算权值
+    my @punDataArray = split/。|，|：|；|！|…|？|、|·|．|○|‖|‘|’|“|”|\《|\》|\（|\）|\【|\】|\［|\［|\］|\〈|\〉|:|\?|\(|\)|'|"|!|,|\./,$senPun;
+    
+    my $punWeight = 1;
+    foreach my $punData (@punDataArray) {
+
+        next if $punData eq "";
+        
+        if ($punData eq $char) {
+
+            $punWeight += 1 + (1 / $punWeight);
+        }
+        elsif ($punData =~ /$char/) {
+
+            $punWeight += 1 + (1 / length $punData);
+        }
+    }
+    $punWeight--;
+    
+    # 无符号，计算权值
+    my $noPunWeight = 0;
+    my $count = $senNoPun =~ s/$char/$char/g;
+    my $length = length $senPun;
+    foreach my $num (1 .. $count) {
+
+        $noPunWeight += 1 + (1 / $num);
+    }
+    $noPunWeight /=  $length;
+
+    $weight = $punWeight + $noPunWeight;
+    
+    return $weight;
+};
+
+sub InsertHash {
+
+    my ($hash,$char,$weight,$uwid) = @_;
+
+};

@@ -1,0 +1,120 @@
+<?php
+/**
+ *  OSS上传文件函数
+ *   在 config/oss_config.php里配置自己的ACCESS ID
+ *   需要配置 DTYPE，以及DEV环境
+ */  
+
+require 'config/oss_config.php';
+require 'oss-sdk/oss.class.php';
+
+//superSecret不要变
+define('superSecret','hAIDiiComACdN');
+
+// 测试环境:true 正式环境:false
+define('DEV',true);
+
+// 设置当前上传的dtype
+define('DTYPE',16200);
+
+$src_path = 'D:/project/sccs_hycycd/audio/';
+$sub = 'z';
+
+upload_audio_files($src_path,$sub);
+
+/*
+ * 获取声音key1
+ * 以后算法可能会改变
+ */ 
+function get_audio_key1($dtype) {
+    return strtolower(substr(md5($dtype.'aUdIOoNE'),5,8));
+}
+
+/*
+ * 获取声音key3
+ * 以后算法可能会改变
+ */ 
+function get_audio_key3($key2,$filename) {
+    $name = pathinfo($filename,PATHINFO_FILENAME);
+    
+    return strtolower(substr(md5($key2.$name),6,9));
+}
+
+/**
+ *  上传音频文件
+ *   OSS 上文件存储格式：
+ *  dtype/sub/key1/key3/fileName.mp3
+ *  key1 为一个固定值，不同的字典不一样。
+    key2 = md5(superSecret + key1)
+    key3 = md5(key2 + fileName)  不要加后缀例如'.mp3'
+    
+ *  @param $src_path  音频文件所在目录
+ *  @param $sub    声音分类， 例如中文、英文等
+ *                 (美音u /英音b /中文z /韩语k /日语j / 西班牙语 s /意大利语 i /俄语 r /法语f / 德语 d)
+ *  @return bool               
+ */    
+function upload_audio_files($src_path,$sub) {
+    
+    if($sub == NULL) return false;
+    
+    $dh = opendir($src_path);
+    
+    if(empty($dh)) return false;
+    
+    $key1 = get_audio_key1(DTYPE);
+    $key2 = strtolower(md5($key1.superSecret));
+    
+    $oss_pre = 'audio/'.DTYPE.'/'.$sub.'/'.$key1.'/';
+    
+    dteam_oss::set_bucket('mscdn');
+    
+    while (false !== ($filename = readdir($dh))) {
+        if ($filename == '.' || $filename == '..') continue;
+        
+        $key3 = get_audio_key3($key2,$filename);
+        $oss_object_name = $oss_pre.$key3.'/'.$filename;
+        $file_path = $src_path.'/'.$filename;
+        try {
+
+            if (dteam_oss::upload_file($oss_object_name,$file_path) == false) {
+            //@todo 显示日志
+            closedir($dh);
+            return false;
+            }    
+        }
+        
+    }
+    
+    closedir($dh);
+    
+    return true;
+}
+
+
+/**
+ * 上传字典数据，
+ * @param  $uwid
+ * @param  $data  需要上传的数据
+ */ 
+// function upload_dict_content($uwid,$data){
+    
+//     dteam_oss::set_bucket('msdata');
+//     $oss_object_name = 'cms/'.DTYPE.'/dict/'.$uwid;
+    
+//     return dteam_oss::upload_data($oss_object_name,$data);
+// }
+
+
+// 上传字典数据Demo
+//$uwid = 12345;
+//$data = 'test_data';
+//upload_dict_content($uwid,$data);
+
+
+//上传声音文件demo
+//$src_path = 'audio_files_demo';
+//$sub = 'z';
+//
+//upload_audio_files($src_path,$sub);
+
+?>

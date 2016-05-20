@@ -3,7 +3,7 @@
 
 ;; ````````` common config `````````
 (require 'init-common-config)
-;; ````````` elpa `````````
+; ````````` elpa `````````
 (require 'init-elpa)
 ;; ````````` theme `````````
 (require 'init-theme)
@@ -25,6 +25,8 @@
 (require 'init-ecb)
 ;; ````````` powerline `````````
 (require 'init-powerline)
+;; ````````` tramp `````````
+; (require 'init-tramp)
 
 ;; ````````` cperl-mode `````````
 (require 'init-cperl-mode)
@@ -43,6 +45,7 @@
  '(cperl-indent-level 4)
  '(current-language-environment "UTF-8")
  '(display-time-mode t)
+ '(ecb-options-version "2.40")
  '(nyan-bar-length 20)
  '(scroll-bar-mode nil)
  '(show-paren-mode t)

@@ -1,0 +1,4 @@
+# name: say ( ... )
+# key: say
+# --
+say ${1:FileHandle} ${2:data};

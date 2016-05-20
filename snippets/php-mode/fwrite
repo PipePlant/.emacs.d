@@ -1,0 +1,5 @@
+# name: fwrite ( ... )
+# key: fwrite
+# --
+
+fwrite(${1:file},${2:data});

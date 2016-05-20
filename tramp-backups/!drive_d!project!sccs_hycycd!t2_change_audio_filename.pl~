@@ -1,0 +1,56 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use Encode;
+use JSON;
+use File::Basename;
+use File::Copy qw (move);
+use feature qw (say);
+
+my %numWord = %{GetNumWordList()};
+my %wordPron = %{GetWordPronList()};
+
+my @audioFile = glob "./audio/*.mp3";
+foreach my $oldAudio (@audioFile) {
+
+    my $oldAudioName = basename $oldAudio;
+    $oldAudioName =~ s/\.mp3//g;
+    my $newAudioName = $wordPron{$numWord{$oldAudioName}};
+    my $newAudio = "./audio/".$newAudioName.".mp3";
+    $newAudio = encode("gbk",decode("utf-8",$newAudio));
+    move $oldAudio,$newAudio;
+}
+
+sub GetNumWordList {
+
+    my $num_word_list = "./audio/log/utf8Table.txt";
+    open my $NW_LIST ,"<", $num_word_list or die $!;
+
+    my %nwList;
+    while (<$NW_LIST>) {
+
+        $_ =~ /(.*)\t(.*)/;
+        $nwList{$1} = $2;
+    }
+    
+    close $NW_LIST;
+
+    return \%nwList;
+};
+
+sub GetWordPronList {
+
+    my $word_pron_list = "./tmp_data/sccs_hycycd_word_pron_list.txt";
+    open my $WP_LIST ,"<", $word_pron_list or die $!;
+
+    my %wpList;
+    while (<$WP_LIST>) {
+
+        $_ =~ /(.*)\t(.*)/;
+        $wpList{$1} = $2;
+    }
+    
+    close $WP_LIST;
+
+    return \%wpList;
+};

@@ -1,4 +1,4 @@
 # name: opendir { ... }
 # key: opendir
 # --
-opendir ${1:DIRHANDLE}, ${2:directory}
+opendir ${1:DIRHANDLE}, ${2:directory};

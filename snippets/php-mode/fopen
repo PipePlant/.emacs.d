@@ -1,0 +1,5 @@
+# name: fopen { ... }
+# key: fopen
+# --
+
+${1:FileHandle} = fopen(${2:File},'${3:Mode}');

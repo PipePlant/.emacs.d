@@ -1,0 +1,97 @@
+## 通过朱伟给的苹果tts合成服务器生成合成音
+## time：2016/1/6/
+## author：jianghongyu
+use strict;
+use warnings;
+use Data::Dumper;
+use JSON;
+use LWP::Simple;
+use URI::Escape;
+use utf8;
+use feature qw (say);
+
+my $audio_folder = "./audio/";
+if (!-e $audio_folder) {
+    mkdir $audio_folder
+}
+my $log_folder = "./audio/log/";
+if (!-e $log_folder) {
+    mkdir $log_folder
+}
+
+my $log = $log_folder."log.txt";
+my $wrong = $log_folder."wrong.txt";
+my $toUTF8Table = $log_folder."utf8Table.txt";
+
+open my $LOG ,">", $log or die $!;
+open my $WRONG ,">>", $wrong or die $!;
+open my $TABLE ,">>", $toUTF8Table or die $!;
+
+my $timeNow = localtime(time);
+say $WRONG "---".$timeNow."---";
+
+## windows有被保留的设备名无法命名需要先判断CON, PRN, AUX, NUL, COM1, COM2, COM3, COM4,
+### COM5, COM6, COM7, COM8, COM9, LPT1, LPT2, LPT3, LPT4, LPT5, LPT6, LPT7, LPT8, and LP
+# my $shebei = "CON, PRN, AUX, NUL, COM1, COM2, COM3, COM4,COM5, COM6, COM7, COM8, COM9, LPT1, LPT2, LPT3, LPT4, LPT5, LPT6, LPT7, LPT8, LP";
+# my @shebei = split(", ",$shebei);
+
+my @dataArray;
+while (<>) {
+
+    chomp;
+    my $line = $_;
+    # $line = Encode::decode("gbk",$line);
+    # $line = Encode::encode("utf8",$line);
+    push @dataArray,$line;
+}
+# print Dumper @dataArray;
+
+for (my $i = 0; $i < @dataArray; $i++) {
+
+    my $url = "http://172.18.18.44:8889/voice?text=".uri_escape($dataArray[$i]);
+    # my $url = "http://172.18.18.227:8889/voice?text=".uri_escape_utf8($dataArray[$i]);
+    
+    my $status = getstore("$url","$audio_folder/"."$i.mp3");
+
+    print $LOG $status."\t"."$i+1"."\t".@dataArray."\t"."$dataArray[$i].mp3"."\n";
+    print $status."\t"."$i+1"."\t".@dataArray."\t"."$dataArray[$i].mp3"."\n";
+    
+    # 404错误重启大友机器等待2分钟
+    if($status == 404) {
+
+        getstore("http://172.18.18.44:8889/reboot", "dummy.txt");
+        sleep 60 * 2;
+        $i--;
+    }
+
+    # 声音合成失败
+    elsif($status == 501) {
+
+        print $WRONG "$dataArray[$i]\n";
+    }
+
+    # 超时等10秒
+    elsif($status == 500) {
+
+        sleep 10;
+        $i--;
+    }
+
+    # 声音合成正确
+    elsif ($status == 200) {
+
+        say $TABLE $i."\t".$dataArray[$i];
+        next;
+    }
+
+    # 未知情况如程序错误
+    else {
+
+        print $WRONG "$dataArray[$i]\n";
+        sleep 30;
+    }
+}
+
+close $LOG;
+close $WRONG;
+close $TABLE;

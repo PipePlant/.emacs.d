@@ -1,4 +1,4 @@
 # name: map { ... }
 # key: map
 # --
-map {${1:expression}} @${2:array}
+map {${1:expression}} @${2:array};
