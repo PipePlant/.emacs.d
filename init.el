@@ -32,6 +32,8 @@
 (require 'init-cperl-mode)
 ;; ````````` php-mode `````````
 (require 'init-php-mode)
+;; ````````` markdown-mode `````````
+(require 'init-markdown-mode)
 
 ;; ````````` auto-save `````````
 (custom-set-variables

@@ -41,7 +41,7 @@
 ;; ````````` show time `````````
 (display-time-mode 1)
 (setq display-time-24hr-format t)
-(setq display-time-format "%H:%M:%S{%a}[%Y/%m/%d]")
+(setq display-time-format "%H:%M{%a}[%Y/%m/%d]")
 (setq display-time-use-mail-icon t)
 ; (setq display-time-day-and-date t)
 ; (setq display-time-interval 10)
@@ -77,12 +77,8 @@
 (setq w32-get-true-file-attributes nil)
 
 ;; ````````` set cursor `````````
-(setq-default cursor-type 'bar)
-
-;; ````````` auto save `````````
-
-;; ````````` backup files `````````
-
+; box(default) hollow nil bar (bar . width) hbar (hbar . height)
+; (setq-default cursor-type 'bar)
 
 ;; ````````` 使用 ibuffer 代替默认的 list-buffers `````````
 (global-set-key (kbd "C-x C-b") 'ibuffer)
