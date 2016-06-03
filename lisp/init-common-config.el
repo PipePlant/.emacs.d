@@ -41,6 +41,7 @@
 ;; ````````` show time `````````
 (display-time-mode 1)
 (setq display-time-24hr-format t)
+(setq system-time-locale "ENU")
 (setq display-time-format "%H:%M{%a}[%Y/%m/%d]")
 (setq display-time-use-mail-icon t)
 ; (setq display-time-day-and-date t)
