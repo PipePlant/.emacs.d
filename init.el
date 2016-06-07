@@ -26,7 +26,9 @@
 ;; ````````` powerline `````````
 (require 'init-powerline)
 ;; ````````` tramp `````````
-; (require 'init-tramp)
+(require 'init-tramp)
+;; ````````` ace-window `````````
+(require 'init-ace-window)
 
 ;; ````````` cperl-mode `````````
 (require 'init-cperl-mode)
