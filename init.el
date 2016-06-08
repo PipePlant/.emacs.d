@@ -61,7 +61,7 @@
  '(current-language-environment "UTF-8")
  '(custom-safe-themes
    (quote
-    ("91fba9a99f7b64390e1f56319c3dbbaed22de1b9676b3c73d935bf62277b799c" "b6db49cec08652adf1ff2341ce32c7303be313b0de38c621676122f255ee46db" "0ae52e74c576120c6863403922ee00340a3bf3051615674c4b937f9c99b24535" "03e3e79fb2b344e41a7df897818b7969ca51a15a67dc0c30ebbdeb9ea2cd4492" "e8bba3c8e8caea2c7a8b6932b0db8d9bdb468c9b44bf554f37b56093d23fde57" "6df30cfb75df80e5808ac1557d5cc728746c8dbc9bc726de35b15180fa6e0ad9" default)))
+    ("8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "91fba9a99f7b64390e1f56319c3dbbaed22de1b9676b3c73d935bf62277b799c" "b6db49cec08652adf1ff2341ce32c7303be313b0de38c621676122f255ee46db" "0ae52e74c576120c6863403922ee00340a3bf3051615674c4b937f9c99b24535" "03e3e79fb2b344e41a7df897818b7969ca51a15a67dc0c30ebbdeb9ea2cd4492" "e8bba3c8e8caea2c7a8b6932b0db8d9bdb468c9b44bf554f37b56093d23fde57" "6df30cfb75df80e5808ac1557d5cc728746c8dbc9bc726de35b15180fa6e0ad9" default)))
  '(display-time-mode t)
  '(ecb-auto-update-methods-after-save t)
  '(ecb-options-version "2.40")
@@ -138,6 +138,6 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(cperl-array-face ((t (:foreground "SystemMenuHilight"))))
+ '(cperl-array-face ((t (:foreground "light slate blue"))))
  '(cperl-hash-face ((t (:foreground "SeaGreen3"))))
  '(cperl-indent-level 4))

@@ -19,7 +19,7 @@
 
 ;; change array&hash syntax color
 (custom-set-faces
-    '(cperl-array-face ((t (:foreground "SystemMenuHilight"))))
+    '(cperl-array-face ((t (:foreground "light slate blue"))))
     '(cperl-hash-face ((t (:foreground "SeaGreen3"))))
     '(cperl-indent-level 4))
 
