@@ -7,11 +7,14 @@
 ; (set-terminal-parameter nil 'background-mode 'dark) ;; or 'light
 ; (enable-theme 'solarized)
 
-;; tommorrow
-; (load-them 'sanityinc-tomorrow-day t)
-; (load-them 'sanityinc-tomorrow-blue t)
-; (load-them 'sanityinc-tomorrow-bright t)
-(load-theme 'sanityinc-tomorrow-night t)
-; (load-them 'sanityinc-tomorrow-eighties t)
+;; ````````` tommorrow `````````
+; (load-theme 'sanityinc-tomorrow-day t)
+; (load-theme 'sanityinc-tomorrow-blue t)
+; (load-theme 'sanityinc-tomorrow-bright t)
+; (load-theme 'sanityinc-tomorrow-night t)
+; (load-theme 'sanityinc-tomorrow-eighties t)
+
+;; ````````` darkokai `````````
+(load-theme 'darkokai t)
 
 (provide 'init-theme)

@@ -25,7 +25,6 @@ perl e_1_get_data.pl
 perl e_1_get_data.pl
 perl e_1_get_data.pl
 perl e_1_get_data.pl
-perl e_1_get_data.pl
 perl 4_make_dict_pack.pl 
 perl 4_make_dict_pack.pl 
 perl 5_pack_flies.pl 
@@ -126,3 +125,4 @@ etage *.pl
 etags *.pl
 etags *.pl
 etags *.pl
+perl 6.1_get_pron_word_luyin.pl 
