@@ -1,3 +1,5 @@
+;; ````````` work path `````````
+(setq default-directory "d:/" )
 ;; ````````` line number `````````
 (global-linum-mode t)
 
@@ -77,11 +79,22 @@
 
 (setq w32-get-true-file-attributes nil)
 
+;; ````````` backups `````````
+(setq backup-by-copying t)
+(setq delete-old-versions t)
+(setq backup-directory-alist t)
+(add-to-list 'backup-directory-alist
+             (cons "." "~/.emacs.d/backups/"))
+(setq tramp-backup-directory-alist backup-directory-alist)
+
 ;; ````````` set cursor `````````
 ; box(default) hollow nil bar (bar . width) hbar (hbar . height)
 ; (setq-default cursor-type 'bar)
 
 ;; ````````` 使用 ibuffer 代替默认的 list-buffers `````````
 (global-set-key (kbd "C-x C-b") 'ibuffer)
+
+; (setq tags-table-list
+;       '("~/.emacs.d/tags-table"))
 
 (provide 'init-common-config)
