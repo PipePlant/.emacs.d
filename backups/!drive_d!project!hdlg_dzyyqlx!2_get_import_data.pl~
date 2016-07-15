@@ -1,0 +1,254 @@
+use warnings;
+use strict;
+use Encode;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+
+my $json = new JSON;
+
+my $in_file = "./tmp_file/hdlg_dzyyqlx_import.txt";
+my $out_file = "./tmp_file/hdlg_dzyyqlx_tmp_details.txt";
+
+open my $IN ,"<", $in_file or die $!;
+open my $OUT ,">", $out_file or die $!;
+
+my %item = ();
+my $flag = 0;
+my $senseFlag = 0;
+my $senseCount = 0;
+my @senseData = ();
+my @senseCNData = ();
+my $stcFlag = 0;
+my $subStcFlag = 0;
+my @stcData = ();
+my @noteData = ();
+while (<$IN>) {
+    chomp;
+    my $line = $_;
+    $line =~ s/　//g;
+    
+    # ```chapter
+    if ($line =~ /^Chapter \d+: (.*) ([\x80-\xff ]+)/) {
+        $item{"title"} = trim($1);
+        $item{"word"} = trim($2);
+        $item{"type"} = "l_a";
+        PrintNote(\@noteData) if @noteData;
+        next;
+    }
+    if ($line =~ /(.*cover\.jpeg)/) {
+        $item{"img"} = $1;
+        say $OUT $json->encode(\%item);
+        %item = ();
+        next;
+    }
+
+    #```unit```
+    if ($line =~ /((Vocabulary)|(Key Terms)|(Conversations)|(Useful Expressions))/) {
+        my $word = $1;
+        if ($word eq "Vocabulary") {
+            $flag = 1;
+        }elsif ($word eq "Key Terms") {
+            $flag = 2;
+        }elsif ($word eq "Conversations") {
+            $flag = 3;
+        }elsif ($word eq "Useful Expressions") {
+            $flag = 4;
+            if (@senseData and @senseCNData) {
+                PrintSense(\@senseData,\@senseCNData);   
+            }
+        }
+        $item{"word"} = $word;
+        $item{"type"} = "l_b";
+        say $OUT $json->encode(\%item);
+        %item = ();
+        next;
+    }
+    
+    if ($line =~ /NOTE:(.*)/) {
+        my $data = $1;
+        $flag = 5;
+        PrintNote(\@noteData) if @noteData;
+        if ($line =~ /(.*)\t(.*)/) {
+            $item{"title"} = $1;
+            $item{"word"} = $2;
+        }else {
+            $item{"title"} = $data;
+        }
+        $item{"type"} = "l_c";
+        say $OUT $json->encode(\%item);
+        %item = ();
+        next;
+    }
+    if ($flag == 5) {
+        if ($line =~ /TIPS\t(.*)/) {
+            push @noteData,trim($1);
+        }else {
+            push @noteData,trim($line);   
+        }
+        next;
+    }
+
+    # ```1 word```
+    if ($flag == 1) {
+        if ($line =~ /(.*)\t(.*)/) {
+            $item{"word"} = $1;
+            $item{"def"} = $2;
+            $item{"type"} = "w_c";
+            next;
+        }
+        if ($line =~ /jpeg|png/) {
+            $item{"img"} = $line;
+            $item{"audio"} = "";
+            say $OUT $json->encode(\%item);
+            %item = ();
+            next;
+        }
+    }
+
+    # ```2 phrase```
+    if ($flag == 2 and
+        $line =~ /(.*)\t(.*)/) {
+        $item{"phrase"} = $1;
+        $item{"def"} = $2;
+        $item{"audio"} = "";
+        $item{"type"} = "w_c";
+        say $OUT $json->encode(\%item);
+        %item = ();
+        next;
+    }
+
+    # ```3 sense```
+    if ($flag == 3) {
+        if ($line eq "==============================") {
+            if ($senseFlag) {
+                $senseFlag = 0;
+            }else {
+                $senseFlag = 1;
+                if (@senseData and @senseCNData) {
+                    PrintSense(\@senseData,\@senseCNData);
+                }
+            }
+            next;
+        }
+        if ($senseFlag) {
+            $line =~ /(.+?) *([\x80-\xff]{3,})/;
+            $item{"title"} = trim($1);
+            $item{"word"} = trim($2);
+            $item{"type"} = "l_c";
+            say $OUT $json->encode(\%item);
+            %item = ();
+            next;
+        }else {
+            GetSenseData($line,\@senseData,\@senseCNData) if $line !~ /=/;
+            next;
+        }
+    }
+
+    #```4 sentence```
+    if ($flag == 4) {
+        if ($line eq "==============================") {
+            if ($stcFlag) {
+                $stcFlag = 0;
+            }else {
+                $stcFlag = 1;
+            }
+            next;
+        }
+        if ($stcFlag) {
+            $item{"title"} = trim($line);
+            $item{"type"} = "l_c";
+            say $OUT $json->encode(\%item);
+            %item = ();
+            next;
+        }
+        if ($line eq "====================") {
+            if ($subStcFlag) {
+                $subStcFlag = 0;
+            }else {
+                $subStcFlag = 1;
+                PrintSentence(\@stcData) if @stcData;
+            }
+            next;
+        }
+        if ($subStcFlag) {
+            $item{"title"} = trim($line);
+            $item{"type"} = "l_d";
+            say $OUT $json->encode(\%item);
+            %item = ();
+            next;
+        }else {
+            push @stcData,$line if $line !~ /=/;
+        }
+    }
+}
+
+close $IN;
+close $OUT;
+
+sub GetSenseData {
+    my ($line,$data,$dataCN) = @_;
+
+    if ($line =~ /^[A-Za-z]/) {
+        push @{$data},$line;
+    }elsif ($line !~ /^\[/ or
+            $line =~ /jpeg|png/) {
+        push @{$dataCN},$line;
+    }
+};
+
+sub PrintSense {
+    my ($data,$dataCN) = @_;
+    my %senseItem = ();
+
+    foreach my $num (0 .. $#{$data}) {
+        if ($num % 2) {
+            $senseItem{"cont"} = ${$data}[$num];
+            $senseItem{"tran"} = ${$dataCN}[$num];
+            $senseItem{"type"} = "w_d";
+            $senseItem{"audio"} = "";
+            say $OUT $json->encode(\%senseItem);
+            %senseItem = ();
+        }else {
+            $senseItem{"role"} = ${$data}[$num];
+            $senseItem{"role_cn"} = ${$dataCN}[$num];
+        }
+    }
+    @{$data} = ();
+    @{$dataCN} = ();
+};
+
+sub PrintSentence {
+    my $data = shift;
+    my %stcItem = ();
+
+    foreach my $num (0 .. $#{$data}) {
+        if ($num % 2) {
+            $stcItem{"tran"} = ${$data}[$num];
+            $stcItem{"type"} = "w_e";
+            $stcItem{"audio"} = "";
+            say $OUT $json->encode(\%stcItem);
+            %stcItem = ();
+        }else {
+            $stcItem{"cont"} = ${$data}[$num];
+        }
+    }
+    @{$data} = ();
+};
+
+sub PrintNote {
+    my $dataArray = shift;
+    my %noteItem = ();
+
+    @{$noteItem{"note"}} = map {$_."<br>";} @{$dataArray};
+    $noteItem{"type"} = "w_d";
+    say $OUT $json->encode(\%noteItem);
+    @{$dataArray} = ();
+};
+
+sub trim {
+    my $string = shift;
+    $string =~ s/^\s+|\s+$//g;
+    $string =~ s/ {2,}/ /g;
+    return $string;
+};

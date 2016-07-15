@@ -1,4 +1,4 @@
-;; -*- emacs-lisp -*- <16/06/07 11:26:35 d:/Program Files/emacs_config/.emacs.d/tramp>
+;; -*- emacs-lisp -*- <16/07/01 18:26:20 d:/Program Files/emacs_config/.emacs.d/tramp>
 ;; Tramp connection history.  Don't change this file.
 ;; You can delete it, forcing Tramp to reapply the checks.
 
@@ -56,4 +56,27 @@
   ("perl-cwd-realpath" t)
   ("perl" "\\perl")
   ("git" "\\git")
+  ("~" "/home/lingchen")
+  ("uid-integer" 1164)
+  ("trash" nil))
+ (["d_pl" "lingchen" "192.168.8.1" nil nil]
+  ("locale" "LC_ALL=en_US.utf8")
+  ("uname" "Linux 3.10.0-123.9.3.el7.x86_64")
+  ("test" "test")
+  ("remote-path"
+   ("/usr/bin" "/bin" "/sbin" "/usr/sbin" "/usr/local/bin" "/usr/local/sbin"))
+  ("remote-shell" "/bin/sh")
+  ("readlink" "\\readlink")
+  ("file-exists" "test -e")
+  ("stat" "\\stat")
+  ("ls" "/usr/bin/ls --color=never")
+  ("id" "/usr/bin/id")
+  ("gid-string" "dict")
+  ("gid-integer" 1000)
+  ("perl-file-spec" t)
+  ("perl-cwd-realpath" t)
+  ("perl" "\\perl")
+  ("git" "\\git")
+  ("trash" nil)
+  ("uid-integer" 1114)
   ("~" "/home/lingchen")))

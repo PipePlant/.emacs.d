@@ -1,5 +1,8 @@
 ;; ````````` monokai `````````
-; (load-theme 'monokai t)
+(load-theme 'monokai t)
+
+;; ````````` darkokai `````````
+; (load-theme 'darkokai t)
 
 ;; ````````` solarized `````````
 ; (load-theme 'solarized t)
@@ -13,8 +16,5 @@
 ; (load-theme 'sanityinc-tomorrow-bright t)
 ; (load-theme 'sanityinc-tomorrow-night t)
 ; (load-theme 'sanityinc-tomorrow-eighties t)
-
-;; ````````` darkokai `````````
-(load-theme 'darkokai t)
 
 (provide 'init-theme)

@@ -1,0 +1,33 @@
+use warnings;
+use strict;
+use Encode;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+
+my $in_file = "./OLD/tmpdocument/hdlg_dzyyqlx.show.txt";
+my $out_file = "./tmp_file/hdlg_dzyyqlx_import.txt";
+
+my $buff;
+{
+    local $/ = undef;
+    open my $IN ,"<", $in_file or die $!;
+    $buff = <$IN>;
+    close $IN;
+}
+
+open my $OUT ,">", $out_file or die $!;
+
+$buff =~ s/TIPS\t(出境流程)\nTIPS\t(DEPARTURE PROCEDURES)/NOTE:$1\t$2/;
+$buff =~ s/TIPS\t(机票)\nTIPS\t(Airline Ticket)/NOTE:$1\t$2/;
+$buff =~ s/TIPS\t(登机牌)/NOTE:$1/;
+$buff =~ s/TIPS\t(航班出发时间表)/NOTE:$1/;
+$buff =~ s/TIPS\t(American VISA)\nTIPS\t(美国签证)/NOTE:$2\t$1/;
+$buff =~ s/TIPS\t(Schengen VISA)\nTIPS\t(申根签证)/NOTE:$2\t$1/;
+$buff =~ s/(2_tips_4.jpeg)\n(TIPS\tI-94 Form)/$2\n$1/;
+$buff =~ s/TIPS\t(I-94 Form)/NOTE:$1/;
+$buff =~ s/TIPS\t(Customs Declaration Form)/NOTE:$1\n2_tips_5.png/;
+$buff =~ s/(在此处签名)\n2_tips_5.png/$1/g;
+
+say $OUT $buff;
+close $OUT;
