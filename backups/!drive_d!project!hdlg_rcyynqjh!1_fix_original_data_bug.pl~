@@ -1,0 +1,42 @@
+use strict;
+use warnings;
+use JSON;
+use Data::Dumper;
+use Encode;
+use feature qw (say);
+
+my $original_data = "./OLD/tmpdocument/hdlg_rcyynqjh_tmp_data2.txt";
+my $tmp_data = "./tmp_data/hdlg_rcyynqjh_tmp.txt";
+
+my $buffer;
+{
+    local $/ = undef;
+    open my $ORIGINAL ,"<", $original_data or die $!;
+    $buffer = <$ORIGINAL>;
+    close $ORIGINAL;
+}
+
+open my $TMP ,">", $tmp_data or die $!;
+
+$buffer =~ s/(<dcz>.+?)\n/$1<\/dcz>\n/g;
+$buffer =~ s/<\/dc>\n<dcz>(.+?)<\/dc><\/dcz>/$1<\/dc>/g;
+$buffer =~ s/(<zhushi>.+?)(<def>)/$1<\/zhushi>\n$2/g;
+$buffer =~ s/(<def>.+?)\n/$1<\/def>\n/g;
+
+$buffer =~ s/(Are you still there\?<\/dy>)\n/$1\n<dy>\[after a while\]<\/dy>/g;
+
+$buffer =~ s/<em>/&b`/g;
+$buffer =~ s/<\/em>/&\/b`/g;
+$buffer =~ s/<i>/&i`/g;
+$buffer =~ s/<\/i>/&\/i`/g;
+$buffer =~ s/</{/g;
+$buffer =~ s/>/}/g;
+$buffer =~ s/&/</g;
+$buffer =~ s/`/>/g;
+$buffer =~ s/<amp;/ & /g;
+$buffer =~ s/词<场/词&场/g;
+
+$buffer =~ s/’/'/g;
+
+print $TMP $buffer;
+close $TMP;

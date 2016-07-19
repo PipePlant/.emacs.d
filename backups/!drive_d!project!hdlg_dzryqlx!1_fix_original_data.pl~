@@ -1,0 +1,25 @@
+use warnings;
+use strict;
+use Encode;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+
+my $in_file = "./tmp_data/hdlg_dzryqlx_tidy_data.txt";
+my $out_file = "./tmp_data/hdlg_dzryqlx_import_data.txt";
+
+open my $IN ,"<", $in_file or die $!;
+open my $OUT ,">", $out_file or die $!;
+
+my %wordList = ();
+my @wordData = ();
+my $wordCount = 0;
+
+while (<$IN>) {
+	chomp;
+	my $line = $_;
+	say $OUT $line;
+}
+
+close $IN;
+close $OUT;
