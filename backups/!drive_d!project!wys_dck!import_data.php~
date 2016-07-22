@@ -1,0 +1,55 @@
+<?php
+date_default_timezone_set('UTC');
+
+//链接mongo数据库
+function dictMongoConnect(){
+	//$mongo = new Mongo('mongodb://mongodb1.dict.cn:27117,mongodb2.dict.cn:27117,mongodb3.dict.cn:27117', array('replicaSet' => 'dictionary', 'timeout' => '1000'));
+	$mongo = new Mongo('mongodb://192.168.1.93:27019');
+	if($mongo){
+		$mongo->setReadPreference(Mongo::RP_PRIMARY_PREFERRED);
+		return $mongo;
+	}else{
+		die('mongo connect failed');
+	}
+}
+
+function main()
+{
+	// $dictName = 'wys_dckxxfo';
+	// $path = "./primaryschool1-12/tmpdocument/";
+	$dictName = 'wys_dckxxft';
+	$path = "./primaryschool1-8/tmpdocument/";
+	// $dictName = 'wys_dckcz';
+	// $path = "./juniorschool/tmpdocument/";
+	// $dictName = 'wys_dckgz';
+	// $path = "./highschool/tmpdocument/";
+
+	$mongo = dictMongoConnect();
+	$db = $mongo->dictionary;
+	$collection = $db->{$dictName};
+
+	$collection ->drop();
+	$fp = fopen($path.$dictName.'_details_full.txt',"r");
+	while($line = fgets($fp)){
+		// echo $line."\n";
+		$line =trim($line);
+		$tmps=preg_split("/\t/",$line);
+		$b=json_decode($tmps[2],true);
+		#var_dump($b);
+		$b["uwid"]=intval($tmps[1]);
+		if(isset($b["prev"])){
+			$b["prev"]=intval($b["prev"]);
+		}
+		if(isset($b["next"])){
+			$b["next"]=intval($b["next"]);
+		}
+		$collection->insert($b);
+	}
+	fclose($fp);
+	$collection->ensureIndex(array("key"=>1));
+	$collection->ensureIndex(array("uwid"=>1));
+}
+
+ini_set('memory_limit', '-1');
+main();
+?>

@@ -1,0 +1,241 @@
+use strict;
+use warnings;
+use JSON;
+use Data::Dumper;
+use Encode;
+use feature qw (say);
+
+my $json = new JSON;
+
+my $tmp_data = "./tmp_data/hdlg_swyynqjh.show3.txt";
+my $uniform_data = "./tmp_data/hdlg_swyynqjh_importdata.txt";
+
+open my $TMP_DATA ,"<", $tmp_data or die $!;
+open my $UNIFORM ,">", $uniform_data or die $!;
+
+my @chapterTitles = ("屌丝求职","电话沟通","日常工作","人事","同事之间","办公会议","客户往来","商务贸易","商务谈判","简报实况","营销宣传","出差与商展");
+my @chapterWord = ("One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve");
+my @indexArray = (0,0,0,0);
+my %flag = ("unit" => 0,"word" => 0,"sentence" => 0,"sense" => 0,
+            "dialog" => 0,"dialogueSTC" => 0,"dialogDEF" => 0,"note" => 0);
+my %item = ();
+
+while (<$TMP_DATA>) {
+    chomp;
+    my $line = $_;
+    $line =~ s/<em>/<b>/g;
+    $line =~ s/<\/em>/<\/b>/g;
+
+    # ```chapter```
+    if ($line =~ /Chapter (\d+)/) {
+        my $num = $1;
+        $item{"chapter"} = "Chapter ".$chapterWord[$num-1];
+        $item{"chapter_name"} = $chapterTitles[$num-1];
+        $item{"chapter_num"} = $num;
+        $item{"index"} = GetIndexNum(0);
+        say $UNIFORM $json->encode(\%item);
+        %item = ();
+        next;
+    }
+
+    # ```unit```
+    if ($line =~ /(Unit (\d+))\t(.*)/) {
+        $item{"unit"} = $1;
+        $item{"unit_number"} = $2;
+        $item{"unit_name"} = $3;
+        $item{"index"} = GetIndexNum(1);
+        $flag{"unit"} = 1;
+        next;
+    }
+    if ($flag{"unit"}) {
+        $item{"unit_summary"} = $line;
+        say $UNIFORM $json->encode(\%item);
+        %item = ();
+        $flag{"unit"} = 0;
+        next;
+    }
+
+    # ```level```
+    if ($line =~ /^(第.*关)\t　(.*)/) {
+        $item{"level"} = $1;
+        $item{"level_name"} = $2;
+        $item{"index"} = GetIndexNum(2);
+        $item{"level_number"} = $indexArray[2];
+        say $UNIFORM $json->encode(\%item);
+        if ($item{"level"} eq "第三关") {
+            $flag{"sense"} = 0;
+            $flag{"dialog"} = 1;
+        }
+        %item = ();
+        next;
+    }
+
+    # ```word```
+    if ($line =~ /^Words/) {
+        $flag{"word"} = 1;
+        next;
+    }
+    if ($flag{"word"} and
+        $line =~ /\t(.*)\t(.*)/) {
+        $item{"word"} = $1;
+        $item{"WDdef"} = $2;
+        $item{"index"} = GetIndexNum(3);
+        say $UNIFORM $json->encode(\%item);
+        %item = ();
+        next;
+    }
+
+    # ```sentence```
+    if ($line =~ /^Sentences/) {
+        $flag{"word"} = 0;
+        $flag{"sentence"} = 1;
+        next;
+    }
+    if ($flag{"sentence"}) {
+        if ($line =~ /^\t(.*)/) {
+            if (exists $item{"STCdef"}) {
+                $item{"STCstc"} = $1;
+                $item{"index"} = GetIndexNum(3);
+                say $UNIFORM $json->encode(\%item);
+                %item = ();
+                next;
+            }else {
+                $item{"STCdef"} = $1;
+            }
+        }elsif ($line eq "==================================") {
+            $flag{"sentence"} = 0;
+        }else {
+            $item{"STCinfo"} = $line;
+            say $UNIFORM $json->encode(\%item);
+            %item = ();
+            next;
+        }
+    }
+
+    # ```Short Dialogues```
+    if ($line =~ /情景\d+/) {
+        $item{"SENscene"} = $line;
+        $flag{"sense"} = 1;
+        say $UNIFORM $json->encode(\%item);
+        %item = ();
+        next;
+    }
+    if ($flag{"sense"}) {
+        if ($line =~ /\d+\t(.*)/) {
+            $item{"SENinfo"} = $1;
+            say $UNIFORM $json->encode(\%item);
+            %item = ();
+            next;
+        }
+        if ($line =~ /\t(\w.*)/) {
+            my $data = $1;
+            if ($data =~ /[\x80-\xff]{3,}/) {
+                $item{"SENdef"} = $data;
+                say $UNIFORM $json->encode(\%item);
+                %item = ();
+                next;
+            }else {
+                $item{"SENstc"} = $data;
+                $item{"index"} = GetIndexNum(3);
+                say $UNIFORM $json->encode(\%item);
+                %item = ();
+                next;
+            }
+        }else {
+            $flag{"sense"} = 0;
+        }
+    }
+
+    # ```Long Dialogue```
+    if ($flag{"dialog"}) {
+        if ($line =~ /^[A-Za-z]/) {
+            $line =~ s/ {2,}/ /g;
+            $item{"DLGDtitle"} = $line;
+            say $UNIFORM $json->encode(\%item);
+            %item = ();
+            next;
+        }
+        if ($line =~ /^\t(.*)/) {
+            $item{"DLGDstc"} = $1;
+            $item{"index"} = GetIndexNum(3);
+            say $UNIFORM $json->encode(\%item);
+            %item = ();
+            $flag{"dialog"} = 0;
+            $flag{"dialogSTC"} = 1;
+            next;
+        }
+    }
+    if ($flag{"dialogSTC"}) {
+        $item{"DLGDstc"} = $1;
+        $item{"index"} = GetIndexNum(3);
+        say $UNIFORM $json->encode(\%item);
+        %item = ();
+        next;
+    }
+    if ($line =~ /译 文/) {
+        $flag{"dialogSTC"} = 0;
+        $flag{"dialogDEF"} = 1;
+        next;
+    }
+    if ($flag{"dialogDEF"}) {
+        if ($line =~ /^\t(.*)/) {
+            $item{"DLGDdef"} = $1;
+            say $UNIFORM $json->encode(\%item);
+            %item = ();
+            next;
+        }
+    }
+    if ($line =~ /注 释/) {
+        $flag{"dialogDEF"} = 0;
+        $flag{"note"} = 1;
+        next;
+    }
+    if ($flag{"note"}) {
+        if ($line =~ /^\t(.*)/) {
+            if ($1 =~ /^\d+\.(.*)/) {
+                my $data = $1;
+                $data =~ /(.*?)([\x80-\xff]{3,}.*)/;
+                $item{"DLGNphrase"} = $1;
+                say $UNIFORM $json->encode(\%item);
+                %item = ();
+                
+                $item{"DLGNdef"} = $2;
+                say $UNIFORM $json->encode(\%item);
+                %item = ();
+            }else {
+                $item{"DLGNdef"} = $line;
+                say $UNIFORM $json->encode(\%item);
+                %item = ();
+            }
+            next;
+        }
+        if ($line eq "============================================") {
+            $flag{"note"} = 0;
+            next;
+        }
+    }
+}
+
+sub GetIndexNum {
+    my $set = shift;
+
+    if ($set == 0) {
+        $indexArray[0]++;
+        $indexArray[1] = 0;
+        $indexArray[2] = 0;
+        $indexArray[3] = 0;
+        return $indexArray[0]*10000;
+    }elsif ($set == 1) {
+        $indexArray[1]++;
+        $indexArray[2] = 0;
+        $indexArray[3] = 0;
+        return $indexArray[0]*10000 + $indexArray[1]*100;
+    }elsif ($set == 2) {
+        $indexArray[2]++;
+        $indexArray[3] = 0;
+        return $indexArray[0]*10000 + $indexArray[1]*100 + $indexArray[2];
+    }elsif ($set == 3) {
+        $indexArray[3]++;
+        return $indexArray[0]*10000 + $indexArray[1]*100 + $indexArray[2]."_".sprintf("%02s",$indexArray[3]);
+    }
+};

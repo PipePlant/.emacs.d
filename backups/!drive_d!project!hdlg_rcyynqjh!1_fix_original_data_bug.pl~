@@ -25,18 +25,39 @@ $buffer =~ s/(<def>.+?)\n/$1<\/def>\n/g;
 
 $buffer =~ s/(Are you still there\?<\/dy>)\n/$1\n<dy>\[after a while\]<\/dy>/g;
 
-$buffer =~ s/<em>/&b`/g;
-$buffer =~ s/<\/em>/&\/b`/g;
-$buffer =~ s/<i>/&i`/g;
-$buffer =~ s/<\/i>/&\/i`/g;
+$buffer =~ s/<em>/`b@/g;
+$buffer =~ s/<\/em>/`\/b@/g;
+$buffer =~ s/<i>/`i@/g;
+$buffer =~ s/<\/i>/`\/i@/g;
 $buffer =~ s/</{/g;
 $buffer =~ s/>/}/g;
-$buffer =~ s/&/</g;
-$buffer =~ s/`/>/g;
-$buffer =~ s/<amp;/ & /g;
+$buffer =~ s/`/</g;
+$buffer =~ s/@/>/g;
+$buffer =~ s/amp;//g;
 $buffer =~ s/词<场/词&场/g;
-
 $buffer =~ s/’/'/g;
 
+$buffer =~ s/card\?{\/dy}\n{dy}B:OK\./card\?{\/dy}\n{dy}A:OK\./;
+$buffer =~ s/(\{sz\}狗狗怎么样了？\{\/sz\})\n(\{sy\}The cat has a clean bill of health\.)&#9;&#9;/$2\{\/sy\}\n$1\n\{sy\}/;
+$buffer =~ s/\{\/qjy\}\{qjy\}/\{\/qjy\}\n\{qjy\}/g;
+$buffer =~ s/(operating system\.)/$1\)/;
+$buffer =~ s/(\{dcz\}脾气坏的\{\/dcz\})/$1\n\{dc\}grumpy\{\/dc\}\n\{dcz\}脾气暴躁的\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}崩溃\{\/dcz\})/$1\n\{dc\}murder\{\/dc\}\n\{dcz\}谋杀\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}露营地\{\/dcz\})/$1\n\{dc\}tent\{\/dc\}\n\{dcz\}帐篷\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}伤口\{\/dcz\})/$1\n\{dc\}swell\{\/dc\}\n\{dcz\}肿胀\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}傲慢的\{\/dcz\})/$1\n\{dc\}rude\{\/dc\}\n\{dcz\}粗鲁的\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}聪明的\{\/dcz\})/$1\n\{dc\}narrow\-minded\{\/dc\}\n\{dcz\}心胸狭窄的\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}做白日梦\{\/dcz\})/$1\n\{dc\}romance\{\/dc\}\n\{dcz\}浪漫\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}见面\{\/dcz\})/$1\n\{dc\}partner\{\/dc\}\n\{dcz\}伴侣\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}秘密的\{\/dcz\})/$1\n\{dc\}relationship\{\/dc\}\n\{dcz\}交往关系\{\/dcz\}/;
+$buffer =~ s/(\{dcz\}最后通牒\{\/dcz\})/$1\n\{dc\}separate\{\/dc\}\n\{dcz\}分居\{\/dcz\}/;
+$buffer =~ s/(\{dc\}humorous\{\/dc\})/\{dc\}talkative\{\/dc\}\n\{dcz\}健谈的\{\/dcz\}\n$1/;
+$buffer =~ s/音 乐/音乐/;
+$buffer =~ s/(\{sz\}这个公寓是三室一厅一卫。\{\/sz\})/$1\n\{sy\}There are three bedrooms, a living room and a restroom in the apartment\.\{\/sy\}\n/g;
+
+$buffer =~ s/<b>Mr\. <b>R<b>ight<\/b>/<b>Mr\. Right<\/b>/;
+$buffer =~ s/<\/b> <b>/ /g;
+$buffer =~ s/&#\d+;//g;
+$buffer =~ s/\n\n/\n/g;
 print $TMP $buffer;
 close $TMP;

@@ -1,0 +1,73 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use JSON;
+# require "E:/eclipse_c++/common/step0_changeName.pl";
+###############################排序程序####################################
+# my $dictName = dictName();
+my $dictName = "wys_fycdfh";
+my $root     = "./tmpdocument/";
+
+#.studydescription
+#.studystructure
+#.details
+
+# my $in = $root . $dictName . "_details";
+# my ($head) = ( $in =~ m/^(.*)\.txt/ );
+# my $out = $head . "_dict.txt";
+
+# my $in = "./primaryschool1-12/wys_dckxxfo_.dict.txt";
+# my $out = "./primaryschool1-12/wys_dckxxfo_.dict_sort.txt";
+# my $in = "./primaryschool1-8/wys_dckxxft_.dict.txt";
+# my $out = "./primaryschool1-8/wys_dckxxft_.dict_sort.txt";
+my $in = "./juniorschool/wys_dckcz_.dict.txt";
+my $out = "./juniorschool/wys_dckcz_.dict_sort.txt";
+# my $in = "./highschool/wys_dckgz_.dict.txt";
+# my $out = "./highschool/wys_dckgz_.dict_sort.txt";
+
+my %words;
+print $in."\n";
+open IN, "< ", $in or die $!;
+while (<IN>)
+{
+
+	#chomp;
+	m/^([^\t]+)\t/;
+	if($dictName eq "wys_hfshyysc")
+	{
+		$_ =~ s/附、//g;
+		$_ =~ s/我祝您早日康 复。/我祝您早日康复。/;
+	}
+
+	if ( exists $words{$1} )
+	{
+		$words{$1} .= "##" . $_;
+	}
+	else
+	{
+		$words{$1} = $_;
+	}
+}
+close IN;
+
+open OUT, "> ", $out or die $!;
+my @keys = sort keys %words;
+foreach my $k (@keys)
+{
+	my $tmp_value = $words{$k};
+	if ( $tmp_value =~ m/##/ )
+	{
+		my @t = split( /##/, $words{$k} );
+		foreach my $value (@t)
+		{
+			print OUT $value;
+		}
+	}
+	else
+	{
+		print OUT $words{$k};
+	}
+
+}
+close OUT;
+print "\n" . $dictName . " step3 has finished!";
