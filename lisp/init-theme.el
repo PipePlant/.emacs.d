@@ -1,20 +1,14 @@
 ;; ````````` monokai `````````
 (load-theme 'monokai t)
 
-;; ````````` darkokai `````````
-; (load-theme 'darkokai t)
-
-;; ````````` solarized `````````
-; (load-theme 'solarized t)
-; (set-frame-parameter nil 'background-mode 'dark) ;; or 'light
-; (set-terminal-parameter nil 'background-mode 'dark) ;; or 'light
-; (enable-theme 'solarized)
-
-;; ````````` tommorrow `````````
-; (load-theme 'sanityinc-tomorrow-day t)
-; (load-theme 'sanityinc-tomorrow-blue t)
-; (load-theme 'sanityinc-tomorrow-bright t)
-; (load-theme 'sanityinc-tomorrow-night t)
-; (load-theme 'sanityinc-tomorrow-eighties t)
+;; ````````` moe `````````
+; (require 'moe-theme)
+; (setq moe-theme-highlight-buffer-id t)
+; (setq moe-theme-resize-markdown-title '(1.5 1.4 1.3 1.2 1.0 1.0))
+; (setq moe-theme-resize-org-title '(1.5 1.4 1.3 1.2 1.1 1.0 1.0 1.0 1.0))
+; (setq moe-theme-resize-rst-title '(1.5 1.4 1.3 1.2 1.1 1.0))
+; (moe-theme-set-color 'orange)
+; ; (powerline-moe-theme)
+; (moe-dark)
 
 (provide 'init-theme)

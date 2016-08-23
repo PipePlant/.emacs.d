@@ -39,6 +39,7 @@
     (set-fontset-font (frame-parameter nil 'font)
         charset
         (font-spec :family "microsoft yahei" :size 13)))
+        ; (font-spec :family "WenQuanYi Micro Hei Mono" :size 14)))
 
 ;; ````````` show time `````````
 (display-time-mode 1)

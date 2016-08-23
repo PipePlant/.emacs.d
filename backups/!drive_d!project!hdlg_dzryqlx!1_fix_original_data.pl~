@@ -7,19 +7,47 @@ use feature qw(say);
 
 my $in_file = "./tmp_data/hdlg_dzryqlx_tidy_data.txt";
 my $out_file = "./tmp_data/hdlg_dzryqlx_import_data.txt";
+my $log_file = "./tmp_data/log.txt";
 
 open my $IN ,"<", $in_file or die $!;
 open my $OUT ,">", $out_file or die $!;
+open my $LOG ,">", $log_file or die $!;
 
 my %wordList = ();
 my @wordData = ();
 my $wordCount = 0;
-
 while (<$IN>) {
 	chomp;
 	my $line = $_;
+    
+    $line =~ s/^(<word>.*)<\/def>$/$1<\/word>/;
+    $line =~ s/<\/gjc><gjcz>/<\/gjc>\n<gjcz>/;
+    $line =~ s/<hbiaotiz><\/hbioatiz>//g;
+    $line =~ s/^(<hbiaoti>.*)<\/hbioatiz>$/$1<\/hbiaoti>/;
+    $line =~ s/^(<briwen>.*)<\/bzhongwen>$/$1<\/briwen>/;
+    $line =~ s/^(<briwen>.*)<\/brigwen>$/$1<\/briwen>/;
+    $line =~ s/^(<briwen>.*[^>]$)/$1<\/briwen>/;
+    $line =~ s/<wimg>shutterstock_69626287_opt.jpeg<\/wimg>//g;
+    $line =~ s/(<def>紫色<\/def>)/$1\n<wimg>zhanque1.jpeg<\/wimg>/g;
+    $line =~ s/011_opt.jpeg/zhanque2.jpeg/g;
+    next if $line eq "";
+
+    if ($line =~ /^<bzhongwen>/) {
+        $line =~ s/<bzhongwen>//g;
+        $line = "<bzhongwen>".$line;
+    }elsif ($line =~ /^<(.+?)>(.*)<\/(.+?)>$/) {
+        my $tag1 = $1;
+        my $data = $2;
+        my $tag2 = $3;
+        if ($data eq "") {
+            next;
+        }elsif ($tag1 ne $tag2) {
+            say $LOG $line;
+        }
+    }
 	say $OUT $line;
 }
 
 close $IN;
 close $OUT;
+close $LOG;

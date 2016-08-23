@@ -1,0 +1,128 @@
+use warnings;
+use strict;
+use Encode;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+
+my $dtype = "shjd_hychsccj";
+my $original_file = "./original_data/".$dtype."_original_data.txt";
+my $out_file = "./tmp_data/".$dtype."_tmp_data.txt";
+
+# ``` ``` ``` ``` ``` ``` ``` ``` ``` ``` ```
+my $buffer;
+{
+    local $/ = undef;
+    open my $ORIG ,"<", $original_file or die $!;
+    $buffer = <$ORIG>;
+    close $ORIG;
+}
+
+$buffer =~ s/\t\t\t<p class="x-- para-style-override-29" xml:lang="en-US"><span class="char-style-override-23">&#160;<\/span><\/p>\n\t\t\t<p class="x---- para-style-override-31" xml:lang="zh-CN">&#160;<\/p>\n//g;
+$buffer =~ s/(<.+?para-style-override-(29|30)" xml:lang="en-US">)/\n$1\n/g;
+
+my @textData = split /\n/,$buffer;
+
+# ``` ``` ``` ``` ``` ``` ``` ``` ``` ``` ```
+open my $OUT ,">", $out_file or die $!;
+my @levelAry = ();
+foreach my $line (@textData) {
+    # ```level A```
+    if ($line =~ /class="x-- para-style-override-20" xml:lang="en-US">(.+?)</) {
+        push @levelAry,$1;
+        next;
+    }
+
+    # ```level B```
+    if ($line =~ /<p class="x-- para-style-override-21" xml:lang="en-US">.*>(第.+?)<.+?char-style-override-16" xml:lang="zh-CN">(.+?)</) {
+        my $level = $1;
+        my $data = $2;
+        $level =~ s/ //g;
+        push @levelAry,$level."\t".$data;
+        next;
+    }
+
+    # ```print level```
+    if ($line =~ /<p class="x-- para-style-override-27" xml:lang="en-US">打招呼<\/p>/ or
+        $line =~ /para-style-override-(29|30)"/) {
+        PrintLevel();
+        next;
+    }
+    
+    # ```word```
+    if ($line =~ /^\t{3}<p class="x--" xml:lang="en-US">(.*)/ or
+        $line =~ /^\t{3}<p class="p0" xml:lang="en-US">(.*)/ or
+        $line =~ /^\t{3}<p class="x-- para-style-override-25".*x--/ or
+        $line =~ /<p class="x-- para-style-override-29" xml:lang="en-US">(.*)/ or
+        $line =~ /&#160/) {
+
+        # delete useless line
+        if ($line =~ /> P\d+/ or
+            $line =~ /&#160;/) {
+            say $OUT "";
+            next;
+        }
+
+        # delete useless data
+        $line =~ s/^\t{3}//g;
+        $line =~ s/<p class="x--" xml:lang="en-US">//g;
+        $line =~ s/<p class="x-- para-style-override-25" xml:lang="en-US">//g;
+        $line =~ s/<p class="p0" xml:lang="en-US">//g;
+        $line =~ s/<span class="x--" xml:lang=".+?">//g;
+        $line =~ s/<span class="char-style-override-\d+" xml:lang=".+?">//g;
+        $line =~ s/<span class="x------"><img .+?(\d+\.\w+)" \/>/$1/g;
+        $line =~ s/<span class="char-style-override-(13|23|24|25|27|30|31|41|42)">//g;
+        $line =~ s/<span class="x-- char-style-override-(26|33)" xml:lang="ko-KR">//g;
+        
+        $line =~ s/<br \/>/\n/g;
+        $line =~ s/(<\/span>){2,}/<\/span>/g;
+        $line =~ s/^<\/span>//g;
+        $line =~ s/<\/span>·<\/span>/·/g;
+        $line =~ s/<span class="char-style-override-28">h<\/span>/<sup>h<\/sup>/g;
+        
+        $line =~ s/([^<])\//$1\t\//g;
+        $line =~ s/\】 /\】\t/g;
+        $line =~ s/<\/span> /\t/g;
+        $line =~ s/　//g;
+        $line =~ s/^ +//g;
+        $line =~ s/<\/span><\/p>//g;
+        $line =~ s/<\/span>//g;
+        
+        $line =~ s/jpg([^\t])/jpg\t$1/g;
+        $line =~ s/\】([^\t])/\】\t$1/g;
+        $line =~ s/([^\t])\【/$1\t\【/g;
+        $line =~ s/([^\t])\(/$1\t\(/g;
+
+        $line =~ s/·//g;
+        $line =~ s/ {2,}/ /g;
+        $line =~ s/\t{2,}/\t/g;
+        $line =~ s/ \t/\t/g;
+        $line =~ s/&#9;//g;
+        $line =~ s/ +$//g;
+        $line =~ s/A\t\/S/A\/S/;
+
+        if ($line =~ /\((.+?)\)/) {
+            my $tmp1 = $1;
+            my $tmp2 = $1;
+            $tmp2 =~ s/\t/ /g;
+            $line =~ s/$tmp1/$tmp2/;
+        }
+        
+        say $OUT $line;
+    }
+}
+close $OUT;
+
+# ``` ``` ``` ``` ``` ``` ``` ``` ``` ``` ```
+sub PrintLevel {
+     my $level = shift @levelAry;
+     if ($level =~ /新魅力/) {
+         say $OUT "\n\t".$level;
+         say $OUT "************************************";
+         say $OUT "\n\t".shift @levelAry;
+         say $OUT "====================================";
+     } else {
+         say $OUT "\n\t".$level;
+         say $OUT "====================================";
+     }
+}

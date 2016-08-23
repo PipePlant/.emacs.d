@@ -1,0 +1,20 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use Encode;
+use JSON;
+use feature qw(say);
+use File::Basename;
+
+sub GetChangeList {
+    my %auidoList = ();
+    my $log_file = "./v2_data/final_data/audio_log.txt";
+    open my $LOG ,"<", $log_file or die $!;
+    while (<$LOG>) {
+        $_ =~ /(.*)\t(.*)/;
+        $auidoList{$1} = $2;
+    }
+    close $LOG;
+};
+
+my @oldAuido = glob "../v2.0_data/1/*/*.mp3";

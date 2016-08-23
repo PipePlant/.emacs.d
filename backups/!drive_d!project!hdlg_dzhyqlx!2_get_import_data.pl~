@@ -1,0 +1,456 @@
+use warnings;
+use strict;
+use Encode;
+use JSON;
+use Data::Dumper;
+
+my $dtype = "hdlg_dzhyqlx";
+my $tmpDocument = "./tmpdocument/";
+
+my $in = $tmpDocument.$dtype."_tidy_data.txt";
+my $tmpShow = $tmpDocument."tmp_show.txt";
+my $out = $tmpDocument.$dtype."_importdata.txt";
+my $TOOL = "./functions.pl";
+require $TOOL;
+
+open my $IN ,"<", $in or die $!;
+
+my @in;
+my $lineNum;
+
+while (<$IN>) {
+    chomp;
+    push(@in,$_);
+}
+
+close $IN;
+
+$lineNum = @in;
+
+open my $TS ,">", $tmpShow or die $!;
+open my $OUT ,">", $out or die $!;
+
+
+my $jsonCoder = new JSON;
+
+my $prevLine = "";
+my $line = "";
+my $nextLine = "";
+
+my %chapter;
+my $chapterNum = 1;
+my %part;
+my $partNum = 1;
+
+my @vocabulary;
+my %word;
+my %img;
+
+my %phrase;
+
+my %dialog_title;
+my %dialog;
+
+my %exp_title;
+my %exp;
+my $expNum = 1;
+
+for (my $var = 0; $var <= $lineNum-1; $var++) {
+    if ($var != 0) {
+        $prevLine = $in[$var-1];
+    }else{
+        $prevLine = "";
+    }
+    $line = $in[$var];
+    if ($var < $lineNum-1) {
+        $nextLine = $in[$var+1];
+    }else{
+        $nextLine = "";
+    }
+    #==============
+    #=chapter
+    #==============
+
+    #~~~~~~chapter name and chapter num~~~~~~
+    if ($line =~ /<p class="正常" xml:lang="zh-Hant-TW">(.*)<\/p>/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/<.*?>//g;
+        $chapter{"chapter_name"} = $tmpValue;
+        $chapter{"chapter_num"} = $chapterNum++;
+        # print $TS $tmpValue."\n";
+
+        next;
+    }
+    #~~~~~~chapter def and print chapter~~~~~~
+    if ($line =~ /<p class="章-3 ParaOverride-27" xml:lang="zh-Hant-TW">(.*)<\/p>/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/<.*?>//g;
+        $tmpValue =~ s/amp;//g;
+        $chapter{"chapter_def"} = $tmpValue;
+        print $OUT $jsonCoder->encode(\%chapter)."\n";
+        # print $TS $tmpValue."\n";
+
+        next;
+    }
+    if ($line =~ /<p class="基本段落"><span class="CharOverride-210">(.*)<\/p>/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/<.*?>//g;
+        $chapter{"chapter_def"} = $tmpValue;
+        print $OUT $jsonCoder->encode(\%chapter)."\n";
+        # print $TS $tmpValue."\n";
+
+        next;
+    }
+    #~~~~~~chapter img~~~~~~
+    if ($nextLine =~ /<p class="正常" xml:lang="zh-Hant-TW">(.*)<\/p>/) {
+        my $tmpValue = $line;
+        $tmpValue =~ /image\/(.*)" alt/;
+        my %tmpHash;
+        $tmpHash{"imgC"} = $1;
+        print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+
+        next;
+    }
+
+    #==============
+    #=unit
+    #==============
+    if ($line =~ /章名標/) {
+        if ($line =~ /章名標.*章名標.*>(.*)<\/span><\/p>/) {
+            my %tmpHash;
+            $tmpHash{"cName"} = $1;
+            print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+            next;
+        }
+        else {
+            $line =~ /章名標.*>(.*)<\/span><\/p>/g;
+            my %tmpHash;    
+            $tmpHash{"cNum"} = $1;
+            print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+            if ($nextLine =~ /<part 4>(실용표현)/) {
+                my %tmpHash;    
+                $tmpHash{"cName"} = $1;
+                print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+            }
+            next;
+        }
+    }
+
+    #==============
+    #=part
+    #==============
+
+    #~~~~~~part num~~~~~~
+    # if ($line =~ /<p class="P1 ParaOverride-4" xml:lang="zh-Hant-TW">(.*)<\/p>/) {
+    #     # if ($1 eq "1") {
+    #     #     $partNum = 1;
+    #     # }
+    #     $part{"part"} = $partNum++;
+    #     print $OUT $jsonCoder->encode(\%part)."\n";
+    #     # print $TS $1."\n";
+    #
+    #     next;
+    # }
+
+    #************* part one 450+1   448*************
+    #~~~~~~word and def and num~~~~~~
+    if ($line =~ /<p class="VOCABULARY( ParaOverride-\d+)?" xml:lang="en-US">(.*)<\/p>/) {
+        my $tmpValue = $2;
+        $tmpValue =~ s/<.*?>//g;
+        if ($tmpValue =~ /^(.*) (.*（.*）?)$/) {
+            $word{"word"} = $1;
+            $word{"defW"} = $2;
+        }
+        else {
+            $tmpValue =~ /^(.*) (.*?)$/;
+            $word{"word"} = $1;
+            $word{"defW"} = $2;
+        }
+        if ($prevLine =~ /<p class="Vocab-No-">(\d+)<\/p>/) {
+            my $num = $1;
+            $word{"num"} = $num;
+        }
+        print $OUT $jsonCoder->encode(\%word)."\n";
+        # undef %word;
+        next;
+    }
+    #~~~~~~word img~~~~~~
+    if ($prevLine =~ /<p class="VOCABULARY( ParaOverride-\d+)?" xml:lang="en-US">(.*)<\/p>/) {
+        if ($line =~ /<img class="_idGenPageitem-\d+" src="带着韩语去旅行--终样-web-resources\/image\/(.*)" alt=".*" \/>/) {
+            $img{"imgW"} = $1;
+
+            print $OUT $jsonCoder->encode(\%img)."\n";
+            undef %img;
+        }
+        next;
+    }
+    #************* part two 261+9+9*************
+    #~~~~~~phrase and def~~~~~~
+    if ($line =~ /<p class="KEY-TERMS" xml:lang="en-US"><span class="CharOverride-\d+"( xml:lang="ko-KR")?>(.*)<\/p>/) {
+        my $tmpValue1 = $2;
+        my $tmpValue2 = $nextLine;
+        $tmpValue1 =~ s/<.*?>//g;
+        $tmpValue2 =~ s/<.*?>//g;
+        $tmpValue2 =~ s/\t+//g;
+        $phrase{"phrase"} = $tmpValue1;
+        $phrase{"defP"} = $tmpValue2;
+
+        print $OUT $jsonCoder->encode(\%phrase)."\n";
+        undef %phrase;
+        next;
+    }
+    if ($line =~ /<p class="_03-CON-動作"><span class="使用韩文">(.*)<\/span><span class="CharOverride-149"> <\/span><span class="CharOverride-195" xml:lang="zh-CN">(.*)<\/span><\/p>/) {
+        $phrase{"phrase"} = $1;
+        $phrase{"defP"} = $2;
+        print $OUT $jsonCoder->encode(\%phrase)."\n";
+
+        next;
+    }
+    if ($line =~ /<p class="KEY-TERMS ParaOverride-72" xml:lang="en-US"><span class="使用韩文 CharOverride-196">(.*)<\/span><span class="CharOverride-197"><\/span><span class="CharOverride-197" xml:lang="zh-CN">(.*)<\/span><\/p>/) {
+        $phrase{"phrase"} = $1;
+        $phrase{"defP"} = $2;
+        print $OUT $jsonCoder->encode(\%phrase)."\n";
+
+        next;
+    }
+    #************* part three 44*************
+    #~~~~~~dialog title and title_def~~~~~~
+    if ($line =~ /<p class="_03-大標( ParaOverride-62)?" xml:lang="en-US"><span class="CharOverride-130" xml:lang="zh-TW">(.*)/) {
+        my $tmpValue1 = $2;
+        $tmpValue1 =~ s/<.*?>//g;
+        $tmpValue1 =~ s/\s+$//g;
+        $tmpValue1 =~ s/^\s+//g;
+        if ($nextLine =~ /<p class="_03-大標( ParaOverride-63)?" xml:lang="en-US"><span class="CharOverride-30">(.*)/) {
+            my $tmpValue2 = $2;
+            $tmpValue2 =~ s/<.*?>//g;
+            $tmpValue2 =~ s/\s+$//g;
+            $tmpValue2 =~ s/^\s+//g;
+            $dialog_title{"titleD"} = $tmpValue1;
+            $dialog_title{"titleD_def"} = $tmpValue2;
+        }else{
+            $tmpValue1 =~ /(.*) (.*?)$/;
+            $dialog_title{"titleD"} = $1;
+            $dialog_title{"titleD_def"} = $2;
+        }
+
+        print $OUT $jsonCoder->encode(\%dialog_title)."\n";
+        undef %dialog_title;
+        next;
+    }
+    #~~~~~~dialog stc_ppl and stc~~~~~~
+    if ($line =~ /<p class="_03-CON-名字( ParaOverride-2)?"><span class="CharOverride-\d+">(.*)<\/span><\/p>/) {
+        $dialog{"stc_ppl"} = $2;
+        $nextLine =~ s/<.*?>//g;
+        $nextLine =~ s/\t+//g;
+        $dialog{"stcD"} = $nextLine;
+
+        print $OUT $jsonCoder->encode(\%dialog)."\n";
+        undef %dialog;
+        next;
+    }
+    #~~~~~~dialog def_ppl and def~~~~~~
+    if ($line =~ /p class="_03-CON-中文名字">(.*)<\/p>/) {
+        $dialog{"def_ppl"} = $1;
+        $nextLine =~ s/<.*?>//g;
+        $nextLine =~ s/\t+//g;
+        $dialog{"defD"} = $nextLine;
+
+        print $OUT $jsonCoder->encode(\%dialog)."\n";
+        undef %dialog;
+        next;
+    }
+
+    #************* part four 64 *************
+    if ($line =~ /<part 4>실용표현/) {
+
+        $expNum = 1;
+        next;
+    }
+    #~~~~~~expression title(9 13 18 无)~~~~~~
+    if ($line =~ /<p class="_04-大標" xml:lang="en-US"><span class="CharOverride-130" xml:lang="zh-TW">(.*)/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/<.*?>//g;
+        $tmpValue =~ s/\s+$//g;
+        $tmpValue =~ s/^\s+//g;
+        $exp_title{"exp_title"} = $tmpValue;
+
+        # print $TS "=============================\n";
+        # print $TS $tmpValue."\n";
+        # print $TS "-----------------------------\n";
+        print $OUT $jsonCoder->encode(\%exp_title)."\n";
+        undef %exp_title;
+        next;
+    }
+    if  ($line =~ /<p class="基本段落"><span class="CharOverride-140">(.*)/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/<.*?>//g;
+        $tmpValue =~ s/\s+$//g;
+        $tmpValue =~ s/^\s+//g;
+        $exp_title{"exp_title"} = $tmpValue;
+
+        # print $TS "=============================\n";
+        # print $TS $tmpValue."\n";
+        # print $TS "-----------------------------\n";
+        print $OUT $jsonCoder->encode(\%exp_title)."\n";
+        undef %exp_title;
+        next;
+    }
+    #~~~~~~expression keyword~~~~~~
+    if ($line =~ /<p class="EXP-左黃底字( ParaOverride-60)?"><span class="CharOverride-(30|31)" xml:lang="zh-CN">(.*)/) {
+        my $tmpValue = $3;
+        $tmpValue =~ s/<.*?>//g;
+        $tmpValue =~ s/\s+$//g;
+        # $tmpValue = "<color>".$tmpValue."</color>";
+        $exp{"keyword"} = $tmpValue;
+        if ($tmpValue eq "车子快没油") {
+            my %tmp;
+            $tmp{"cName"} = "실용표현";
+            print $OUT $jsonCoder->encode(\%tmp)."\n";
+        }
+        # print $TS "=>".$tmpValue."\n";
+        print $OUT $jsonCoder->encode(\%exp)."\n";
+        undef %exp;
+        next;
+    }
+    #~~~~~~expression stc and def~~~~~~
+    if ($line =~ /<p class="使用韩文">(.*)<span class="CharOverride-\d+" xml:lang="zh-CN">(.*)/) {
+        my $var1 = $1;
+        my $var2 = $2;
+        $var1 =~ s/<.*?>//g;
+        $var2 =~ s/<.*?>//g;
+        my %tmpHash1;
+        $tmpHash1{"stcE"} = $var1;
+        $tmpHash1{"num"} = $expNum;
+        print $OUT $jsonCoder->encode(\%tmpHash1)."\n";
+        undef %tmpHash1;
+        my %tmpHash2;
+        $tmpHash2{"defE"} = $var2;
+        print $OUT $jsonCoder->encode(\%tmpHash2)."\n";
+        undef %tmpHash2;
+
+        $expNum++;
+        next;
+    }
+    #~~~~~~expression stc 1171~~~~~~
+    if ($line =~ /<p class="使用韩文( ParaOverride-27)?">(.*)/) {
+        my $tmpValue = $2;
+        $tmpValue =~ s/<.*?>//g;
+        $tmpValue =~ s/\s+$//g;
+        $exp{"stcE"} = $tmpValue;
+        $exp{"num"} = $expNum;
+
+        # print $TS "\t".$expNum."\t".$tmpValue."\n";
+        print $OUT $jsonCoder->encode(\%exp)."\n";
+        undef %exp;
+        $expNum++;
+        next;
+    }
+    #~~~~~~expression stc~~~~~~
+    if ($line =~ /<p class="_EXP-右中英文"><span class="CharOverride-138">(.*)/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/<.*?>//g;
+        $tmpValue =~ s/\s+$//g;
+        $exp{"stcE"} = $tmpValue;
+        $exp{"num"} = $expNum;
+
+        # print $TS "\t".$expNum."\t".$tmpValue."\n";
+        print $OUT $jsonCoder->encode(\%exp)."\n";
+        undef %exp;
+        $expNum++;
+        next;
+    }
+    #~~~~~~expression def~~~~~~(137|144|198)
+    if ($line =~ /<p class="_EXP-右中英文( ParaOverride-\d+)?"><span class="CharOverride-\d+" xml:lang="zh-CN">(.*)/) {
+        my $tmpValue = $2;
+        $tmpValue =~ s/<.*?>//g;
+        $tmpValue =~ s/\s+$//g;
+        $exp{"defE"} = $tmpValue;
+
+        # print $TS "\t".$expNum."\t".$tmpValue."\n";
+        print $OUT $jsonCoder->encode(\%exp)."\n";
+        undef %exp;
+        next;
+    }
+    #~~~~~~expression stc and def~~~~~~
+    if ($line =~ /<p class="_EXP-右中英文( ParaOverride-\d+)?"><span class="使用韩文"( xml:lang="zh-CN")?>(.*)/) {
+        my $tmpValue = $3;
+        $tmpValue =~ s/\s+$//g;
+        $tmpValue =~ /(.*?)<\/span>(.*)/;
+        my $var1 = $1;
+        my $var2 = $2;
+        $var2 =~ s/<.*?>//g;
+        $var2 =~ s/^\s+//g;
+        if ($var2 eq "" or $var2 eq " ") {
+            $exp{"stcE"} = $var1;
+            $exp{"num"} = $expNum;
+            print $OUT $jsonCoder->encode(\%exp)."\n";
+        }elsif ($var2 eq ".") {
+            $exp{"stcE"} = $var1.".";
+            $exp{"num"} = $expNum;
+            print $OUT $jsonCoder->encode(\%exp)."\n";
+        }else{
+            my %tmpHash1;
+            $tmpHash1{"stcE"} = $var1;
+            $tmpHash1{"num"} = $expNum;
+            print $OUT $jsonCoder->encode(\%tmpHash1)."\n";
+            undef %tmpHash1;
+            my %tmpHash2;
+            $tmpHash2{"defE"} = $var2;
+            print $OUT $jsonCoder->encode(\%tmpHash2)."\n";
+            undef %tmpHash2;
+        }
+        undef %exp;
+        $expNum++;
+        next;
+    }
+
+    #************* part five *************
+    #~~~~~~other titleO_def~~~~~~
+    if ($line =~ /<part 5 a>(.*)<\/span><\/p>/) {
+        my %tmpHash;
+        $tmpHash{"titleO_def"} = $1;
+
+        print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+        next;
+    }
+    #~~~~~~other titleO~~~~~~
+    if ($line =~ /<part 5 ad>(.*)<\/span><\/p>/) {
+        my %tmpHash;
+        $tmpHash{"titleO"} = $1;
+
+        print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+        next;
+    }
+    #~~~~~~other titleO~~~~~~
+    if ($line =~ /<part 5 a b>(.*)<\/p>/) {
+        my %tmpHash;
+        $tmpHash{"note"} = $1;
+        $tmpHash{"note"} =~ s/<.*?>//g;
+        $tmpHash{"note"} =~ s/u(.*)u/<u>$1<\/u>/g;
+
+        print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+        next;
+    }
+    #~~~~~~other img~~~~~~
+    if ($line =~ /<part 5 a b c><img class="_idGenPageitem-\d+" src="带着韩语去旅行--终样-web-resources\/image\/(.*)" alt=".*" \/>/) {
+        my %tmpHash;
+        $tmpHash{"imgO"} = $1;
+
+        print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+        next;
+    }
+
+    if ($line =~ /<p class="aaaa" xml:lang="zh-Hant-TW"><aaa>(.*)/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/<.*?>//g;
+        my %tmpHash;
+        $tmpHash{"tip"} = $tmpValue;
+
+        # print $TS $tmpValue."\n";
+        print $OUT $jsonCoder->encode(\%tmpHash)."\n";
+        next;
+    }
+}
+
+close $TS;
+close $OUT;

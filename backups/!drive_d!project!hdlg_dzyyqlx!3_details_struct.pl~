@@ -8,13 +8,13 @@ use feature qw(say);
 my $json = new JSON;
 my $uwidCorp = 12;      # 华东理工
 my $uwidLen = 0;        # 0x00
-my $uwidSubDict = 13;   #带着韩语去旅游
+my $uwidSubDict = 14;   #带着英语去旅游
 my $uwidBase = ($uwidCorp << 26) | ($uwidLen << 24) | ($uwidSubDict << 16);
 
-my $in = "./tmpdocument/hdlg_dzhyqlx_tmp_details.txt";
-my $details = "./final_data/hdlg_dzhyqlx_details_full.txt";
-my $struct = "./final_data/hdlg_dzhyqlx.studystructure.txt";
-my $description = "./final_data/hdlg_dzhyqlx.studydescription.txt";
+my $in = "./tmp_data/hdlg_dzyyqlx_tmp_details.txt";
+my $details = "./final_data/hdlg_dzyyqlx_details_full.txt";
+my $struct = "./final_data/hdlg_dzyyqlx.studystructure.txt";
+my $description = "./final_data/hdlg_dzyyqlx.studydescription.txt";
 
 open my $IN ,"<", $in or die $!;
 open my $DETAILS ,">", $details or die $!;
@@ -181,14 +181,15 @@ sub StructFile {
             }
             if ($fullId =~ /^\Q$id\E_[0-9a-zA-Z]+$/) {
                 $des{"childrennum"}++;
-                if (${$fullStrHash}{$fullId} eq "layer") {
+                if ($id eq "kc" or 
+                    ${$fullStrHash}{$id} eq "layer") {
                     push @{$str{"sub_id"}},$fullId;
                 }else {
                     push @{$str{"sub_uwid"}},$fullId;
                 }
             }
         }
-
+        @{$str{"sub_id"}} = sort {$a cmp $b} @{$str{"sub_id"}} if exists $str{"sub_id"};
         say $STR $id."\t".$json->encode(\%str);
         say $DES $id."\t".$json->encode(\%des);
     }

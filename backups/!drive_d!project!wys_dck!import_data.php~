@@ -15,10 +15,10 @@ function dictMongoConnect(){
 
 function main()
 {
-	// $dictName = 'wys_dckxxfo';
-	// $path = "./primaryschool1-12/tmpdocument/";
-	$dictName = 'wys_dckxxft';
-	$path = "./primaryschool1-8/tmpdocument/";
+	$dictName = 'wys_dckxxfo';
+	$path = "./primaryschool1-12/tmpdocument/";
+	// $dictName = 'wys_dckxxft';
+	// $path = "./primaryschool1-8/tmpdocument/";
 	// $dictName = 'wys_dckcz';
 	// $path = "./juniorschool/tmpdocument/";
 	// $dictName = 'wys_dckgz';
@@ -29,7 +29,7 @@ function main()
 	$collection = $db->{$dictName};
 
 	$collection ->drop();
-	$fp = fopen($path.$dictName.'_details_full.txt',"r");
+	$fp = fopen($path.$dictName.'_v2_details_full.txt',"r");
 	while($line = fgets($fp)){
 		// echo $line."\n";
 		$line =trim($line);

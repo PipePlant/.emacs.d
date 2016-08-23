@@ -1,0 +1,25 @@
+use warnings;
+use strict;
+use Encode;
+use Data::Dumper;
+use File::Basename;
+use File::Copy;
+use feature qw(say);
+
+my $img_log = "./tmpdocument/hdlg_dzhyqlx_img_log.txt";
+my %imgHash;
+
+open my $IMG_LOG ,"<", $img_log or die $!;
+map {$_ =~ /(.*)\t(.*)/; $imgHash{$1} = $2;} <$IMG_LOG>;
+close $IMG_LOG;
+
+my $newPath = "./hdlg_dzhyqlx_resources/";
+my @oldImgArray = glob "./image/*";
+
+foreach my $img (@oldImgArray) {
+	my $imgUtf8 = Encode::encode("utf8",Encode::decode("gbk",$img));
+    my $base = basename $imgUtf8;
+    if (exists $imgHash{$base}) {
+        copy ($img,$newPath.$imgHash{$base});
+    }
+}

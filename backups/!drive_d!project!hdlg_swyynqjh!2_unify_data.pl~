@@ -19,7 +19,7 @@ my @indexArray = (0,0,0,0);
 my %flag = ("unit" => 0,"word" => 0,"sentence" => 0,"sense" => 0,
             "dialog" => 0,"dialogueSTC" => 0,"dialogDEF" => 0,"note" => 0);
 my %item = ();
-
+my @senArray = ();
 while (<$TMP_DATA>) {
     chomp;
     my $line = $_;
@@ -57,6 +57,7 @@ while (<$TMP_DATA>) {
 
     # ```level```
     if ($line =~ /^(第.*关)\t　(.*)/) {
+        PrintSenData(\@senArray) if @senArray;
         $item{"level"} = $1;
         $item{"level_name"} = $2;
         $item{"index"} = GetIndexNum(2);
@@ -113,7 +114,8 @@ while (<$TMP_DATA>) {
     }
 
     # ```Short Dialogues```
-    if ($line =~ /情景\d+/) {
+    if ($line =~ /情景 ?\d+/) {
+        PrintSenData(\@senArray) if @senArray;
         $item{"SENscene"} = $line;
         $flag{"sense"} = 1;
         say $UNIFORM $json->encode(\%item);
@@ -122,25 +124,15 @@ while (<$TMP_DATA>) {
     }
     if ($flag{"sense"}) {
         if ($line =~ /\d+\t(.*)/) {
+            PrintSenData(\@senArray) if @senArray;
             $item{"SENinfo"} = $1;
             say $UNIFORM $json->encode(\%item);
             %item = ();
             next;
         }
         if ($line =~ /\t(\w.*)/) {
+            push @senArray,$1;
             my $data = $1;
-            if ($data =~ /[\x80-\xff]{3,}/) {
-                $item{"SENdef"} = $data;
-                say $UNIFORM $json->encode(\%item);
-                %item = ();
-                next;
-            }else {
-                $item{"SENstc"} = $data;
-                $item{"index"} = GetIndexNum(3);
-                say $UNIFORM $json->encode(\%item);
-                %item = ();
-                next;
-            }
         }else {
             $flag{"sense"} = 0;
         }
@@ -237,4 +229,23 @@ sub GetIndexNum {
         $indexArray[3]++;
         return $indexArray[0]*10000 + $indexArray[1]*100 + $indexArray[2]."_".sprintf("%02s",$indexArray[3]);
     }
+};
+
+sub PrintSenData {
+    my $senData = shift;
+
+    foreach my $num (0 .. $#{$senData}) {
+        if ($num <= (@{$senData}/2 - 1)) {
+            $item{"SENstc"} = ${$senData}[$num];
+            $item{"index"} = GetIndexNum(3);
+            say $UNIFORM $json->encode(\%item);
+            %item = ();
+        }else {
+            $item{"SENdef"} = ${$senData}[$num];
+            say $UNIFORM $json->encode(\%item);
+            %item = ();
+        }
+    }
+
+    @{$senData} = ();
 };

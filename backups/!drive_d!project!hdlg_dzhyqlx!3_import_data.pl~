@@ -1,0 +1,304 @@
+use warnings;
+use strict;
+use Encode;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+
+my $json = new JSON;
+
+my $dtype = "hdlg_dzhyqlx";
+my $tmpDocument = "./tmpdocument/";
+
+my $in = $tmpDocument.$dtype."_importdata.txt";
+my $tmp_data = $tmpDocument.$dtype."_tmp_details.txt";
+my $img_log = $tmpDocument."img_log.txt";
+
+open my $IN ,"<", $in or die $!;
+open my $TMP_DATA ,">", $tmp_data or die $!;
+open my $IMG_LOG ,">", $img_log or die $!;
+
+my %chapterData = ();
+my %unitData = ();
+my %subData = ();
+my $chapterNum = 0;
+my $unitNum = 0;
+my $subNum = 0;
+
+my @wordArray = ();
+my %tmpSenseData = ();
+my @contArray = ();
+my @tranArray = ();
+my @roleArray = ();
+my @role_cnArray = ();
+my @tmpOther = ();
+
+my $sentenceFlag = 0;
+my $noteFlag = 0;
+while (<$IN>) {
+    my $line = $_;
+    my %item = %{$json->decode($line)};
+
+    # ```chapter```
+    if ($line =~ /imgC/) {
+        if (exists $subData{"note"}) {
+            InitVar(3);
+            $subData{"note"} = \@tmpOther;
+            # $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+            $subData{"type"} = "w_d";
+            say $TMP_DATA $json->encode(\%subData);
+        }
+        InitVar(1);      
+        $chapterNum++;
+        $item{"imgC"} =~ /(\.\w+)$/;
+        my $img = $chapterNum."_cover".$1;
+        $img =~ s/\.jpeg/\.jpg/;
+        $chapterData{"img"} = $img;
+        say $IMG_LOG $item{"imgC"}."\t".$img;
+        next;
+    }
+    if($line =~ /chapter_name/) {
+        $chapterData{"title"} = $item{"chapter_name"};
+        $chapterData{"word"} = $item{"chapter_def"};
+        $chapterData{"type"} = "l_a";
+        say $TMP_DATA $json->encode(\%chapterData);
+        next;
+    }
+
+    #```unit```
+    if ($line =~ /cNum/) {
+        SenseData();
+        InitVar(2);
+        $unitNum++;
+        $unitData{"type"} = "l_b";
+        $sentenceFlag = 0;
+        next;
+    }
+    if ($line =~ /cName/) {
+        $unitData{"title"} = $item{"cName"};
+        if ($item{"cName"} eq "단어") {
+            $unitData{"word"} = "图解词汇";
+        } elsif ($item{"cName"} eq "핵심단어") {
+            $unitData{"word"} = "延伸短语";
+        } elsif ($item{"cName"} eq "회화") {
+            $unitData{"word"} = "会话练习";
+        } elsif ($item{"cName"} eq "실용표현") {
+            $unitData{"word"} = "实用表达"; 
+        } elsif ($item{"cName"} eq "단어") {
+            
+        }
+        $unitData{"title"} = $item{"cName"};
+        say $TMP_DATA $json->encode(\%unitData);
+        next;
+    }
+
+    #```word```
+    if ($line =~ /defW/) {
+        if (exists $subData{"word"} and !exists $subData{"img"}) {
+            my %tmpItem = %subData;
+            push @wordArray,\%tmpItem;
+        }
+        InitVar(3);
+        $subNum++;
+        $subData{"word"} = $item{"word"};
+        $subData{"def"} = $item{"defW"};
+        $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        $subData{"type"} = "w_c";
+        next;
+    }
+    if ($line =~ /imgW/) {
+        $item{"imgW"} = "p287.jpg" if $item{"imgW"} eq "zhanque";
+        $item{"imgW"} = "2.jpg" if $item{"imgW"} eq "zhanque.jpeg";
+        $item{"imgW"} =~ /(\.\w+)$/;
+        my $img = $chapterNum."_".$subNum.$1;
+        $img =~ s/\.jpeg/\.jpg/;
+        $subData{"img"} = $img;
+        say $IMG_LOG $item{"imgW"}."\t".$img;
+        if (@wordArray) {
+            foreach my $tmpItem (@wordArray) {
+                ${$tmpItem}{"img"} = $item{"imgW"};
+                say $TMP_DATA $json->encode($tmpItem);
+            }
+            @wordArray = ();
+        }
+        say $TMP_DATA $json->encode(\%subData);
+        next;
+    }
+
+    #```phrase```
+    if ($line =~ /phrase/) {
+        InitVar(3);
+        $subNum++;
+        $subData{"phrase"} = $item{"phrase"};
+        $subData{"def"} = $item{"defP"};
+        $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        $subData{"type"} = "w_c";
+        say $TMP_DATA $json->encode(\%subData);
+        next;
+    }
+
+    #```sense```
+    if ($line =~ /titleD/) {
+        InitVar(3);
+        SenseData();
+        $subData{"title"} = $item{"titleD"};
+        $subData{"word"} = $item{"titleD_def"};
+        $subData{"type"} = "l_c";
+        say $TMP_DATA $json->encode(\%subData);
+        next;
+    }
+    if ($line =~ /stcD/) {
+        push @contArray,$item{"stcD"};
+        push @roleArray,$item{"stc_ppl"};
+        next;
+    }
+    if ($line =~ /defD/) {
+        push @tranArray,$item{"defD"};
+        push @role_cnArray,$item{"def_ppl"};
+        next;
+    }
+
+    #```sentence```
+    if ($line =~ /exp_title/) {
+        InitVar(3);
+        $subData{"title"} = $item{"exp_title"};
+        $subData{"type"} = "l_c";
+        $sentenceFlag = 1;
+        say $TMP_DATA $json->encode(\%subData);
+        next;
+    }
+    if ($line =~ /keyword/) {
+        unless ($sentenceFlag) {
+            InitVar(3);
+            $subData{"title"} = "";
+            $subData{"type"} = "l_c";
+            say $TMP_DATA $json->encode(\%subData);
+            $sentenceFlag = 1;
+        }
+        InitVar(3);
+        $subData{"title"} = $item{"keyword"};
+        $subData{"type"} = "l_d";
+        say $TMP_DATA $json->encode(\%subData);
+        next;
+    }
+    if ($line =~ /stcE/) {
+        InitVar(3);
+        $subNum++;
+        $subData{"cont"} = $item{"stcE"};
+        $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        $subData{"type"} = "w_e";
+        next;
+    }
+    if ($line =~ /defE/) {
+        $subData{"tran"} = $item{"defE"};
+        say $TMP_DATA $json->encode(\%subData);
+        next;
+    }
+
+    #```other```
+    if ($line =~ /titleO_def/) {
+        if (@tmpOther) {
+            InitVar(3);
+            $subData{"note"} = \@tmpOther;
+            # $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+            $subData{"type"} = "w_c";
+            say $TMP_DATA $json->encode(\%subData);
+        }
+        InitVar(3);
+        $subData{"word"} = $item{"titleO_def"};
+        $noteFlag = 1;
+        next;
+    }
+    if ($line =~ /titleO/) {
+        $subNum++;
+        $subData{"title"} = $item{"titleO"};
+        $subData{"type"} = "l_b";
+        say $TMP_DATA $json->encode(\%subData);
+        $noteFlag = 0;
+        InitVar(3);
+        InitVar(5);
+        next;
+    }
+    if ($line =~ /((note)|(imgO))/) {
+        if ($noteFlag) {
+            $subData{"title"} = "";
+            $subData{"type"} = "l_b";
+            say $TMP_DATA $json->encode(\%subData);
+            $noteFlag = 0;
+        }
+        push @tmpOther,$item{$1};
+        next;
+    }
+}
+
+close $IN;
+close $TMP_DATA;
+close $IMG_LOG;
+
+sub InitVar {
+    my $flag = shift;
+    $flag //= 0;
+
+    if ($flag == 1) {
+        %chapterData = ();
+        %unitData = ();
+        %subData = ();
+
+        $unitNum = 0;
+        $subNum = 0;
+    }elsif ($flag == 2) {
+        %unitData = ();
+        %subData = ();
+
+        $subNum = 0;
+    }elsif ($flag == 3) {
+        %subData = ();
+    }elsif ($flag == 4) {
+        @contArray = ();
+        @tranArray = ();
+        @roleArray = ();
+        @role_cnArray = ();
+    }elsif ($flag == 5) {
+        @tmpOther = ();
+    }
+};
+
+sub GetPronNum {
+    my ($chap,$unit,$word) = @_;
+    $chap //= 0;
+    $unit //= 0;
+    $word //= 0;
+    my $pronNum = "";
+
+    if ($chap < 1) {
+        return $pronNum;
+    }
+    else {
+        if ($unit != 0 and $word != 0) {
+            $pronNum = $chap*10000 + $unit*100 + $word;
+        }
+        elsif ($unit != 0) {
+            $pronNum = $chap*10000 + $unit*100;
+        }
+        else {
+            $pronNum = $chap*10000;
+        }
+
+        return $pronNum;
+    }
+};
+
+sub SenseData {
+    foreach (0 .. $#contArray) {
+        my %tmpVar;
+        $subNum++;
+        $tmpVar{"cont"} = shift @contArray;
+        $tmpVar{"tran"} = shift @tranArray;
+        $tmpVar{"role"} = shift @roleArray;
+        $tmpVar{"role_cn"} = shift @role_cnArray;
+        $tmpVar{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        $tmpVar{"type"} = "w_d";
+        say $TMP_DATA $json->encode(\%tmpVar);
+    }
+    InitVar(4);
+};

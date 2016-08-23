@@ -9,25 +9,25 @@ use Digest::MD5::File qw(file_md5_hex);
 use Digest::MD5 qw(md5_hex);
 use Digest::MD5;
 
-# my $Dir="./wys_dckxxfo_kc_lixian_gzip/";
-# my $inputDIR = "wys";
-# my $dtype="wys_dckxxfo";
-# my $online_pa="-6708lc21psd";
-
-my $Dir="./wys_dckxxft_kc_lixian_gzip/";
+my $Dir="./wys_dckxxfo_kc_lixian_gzip/";
 my $inputDIR = "wys";
-my $dtype="wys_dckxxft";
-my $online_pa="-6708lc14psd";
+my $dtype="wys_dckxxfo";
+my $online_pa="-6822lc23psd";
+
+# my $Dir="./wys_dckxxft_kc_lixian_gzip/";
+# my $inputDIR = "wys";
+# my $dtype="wys_dckxxft";
+# my $online_pa="-6810lc15psd";
 
 # my $Dir="./wys_dckcz_kc_lixian_gzip/";
 # my $inputDIR = "wys";
 # my $dtype="wys_dckcz";
-# my $online_pa="-6620lc10psd";
+# my $online_pa="-6822lc14psd";
 
 # my $Dir="./wys_dckgz_kc_lixian_gzip/";
 # my $inputDIR = "wys";
 # my $dtype="wys_dckgz";
-# my $online_pa="-6708lc9psd";
+# my $online_pa="-6721lc12psd";
 
 #my $outputDIR="../lixianslice/".$inputDIR."_slice/";
 #unless( -e "lixianslice/"){

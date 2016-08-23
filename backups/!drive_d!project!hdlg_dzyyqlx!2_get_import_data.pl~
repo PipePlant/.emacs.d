@@ -7,14 +7,17 @@ use feature qw(say);
 
 my $json = new JSON;
 
-my $in_file = "./tmp_file/hdlg_dzyyqlx_import.txt";
-my $out_file = "./tmp_file/hdlg_dzyyqlx_tmp_details.txt";
+my $in_file = "./tmp_data/hdlg_dzyyqlx_import.txt";
+my $out_file = "./tmp_data/hdlg_dzyyqlx_tmp_details.txt";
+my $img_log = "./tmp_data/img_log.txt";
 
 open my $IN ,"<", $in_file or die $!;
 open my $OUT ,">", $out_file or die $!;
+open my $IMG_LOG ,">", $img_log or die $!;
 
 my %item = ();
 my $flag = 0;
+my @wordArray = ();
 my $senseFlag = 0;
 my $senseCount = 0;
 my @senseData = ();
@@ -23,13 +26,22 @@ my $stcFlag = 0;
 my $subStcFlag = 0;
 my @stcData = ();
 my @noteData = ();
+my $chapterNum = 0;
+my $unitNum = 0;
+my $subNum = 0;
 while (<$IN>) {
     chomp;
     my $line = $_;
     $line =~ s/　//g;
-    
+
+    if ($line eq "=================================================") {
+        $flag = 0;
+        next;
+    }
     # ```chapter
     if ($line =~ /^Chapter \d+: (.*) ([\x80-\xff ]+)/) {
+        PrintSentence(\@stcData) if @stcData;
+
         $item{"title"} = trim($1);
         $item{"word"} = trim($2);
         $item{"type"} = "l_a";
@@ -37,44 +49,66 @@ while (<$IN>) {
         next;
     }
     if ($line =~ /(.*cover\.jpeg)/) {
+        InitNum(1);
         $item{"img"} = $1;
         say $OUT $json->encode(\%item);
+        say $IMG_LOG " \t".$item{"img"};
         %item = ();
         next;
     }
 
     #```unit```
     if ($line =~ /((Vocabulary)|(Key Terms)|(Conversations)|(Useful Expressions))/) {
-        my $word = $1;
-        if ($word eq "Vocabulary") {
+        my $title = $1;
+        my $word = "";
+        PrintSentence(\@stcData) if @stcData;
+        if ($title eq "Vocabulary") {
             $flag = 1;
-        }elsif ($word eq "Key Terms") {
+            $word = "图解词汇";
+        }elsif ($title eq "Key Terms") {
             $flag = 2;
-        }elsif ($word eq "Conversations") {
+            $word = "延伸短语";
+        }elsif ($title eq "Conversations") {
             $flag = 3;
-        }elsif ($word eq "Useful Expressions") {
+            $word = "会话练习";
+        }elsif ($title eq "Useful Expressions") {
             $flag = 4;
+            $word = "实用表达";
             if (@senseData and @senseCNData) {
-                PrintSense(\@senseData,\@senseCNData);   
+                PrintSense(\@senseData,\@senseCNData);
             }
         }
+        InitNum(2);
+        $item{"title"} = $title;
         $item{"word"} = $word;
         $item{"type"} = "l_b";
         say $OUT $json->encode(\%item);
         %item = ();
         next;
     }
-    
+    if ($line =~ /##########/) {
+        PrintSentence(\@stcData) if @stcData;
+        InitNum(2);
+        $item{"title"} = "Others";
+        $item{"word"} = "补充知识";
+        $item{"type"} = "l_b";
+        say $OUT $json->encode(\%item);
+        %item = ();
+        next;
+    }
+
+    # ```note```
     if ($line =~ /NOTE:(.*)/) {
         my $data = $1;
         $flag = 5;
         PrintNote(\@noteData) if @noteData;
-        if ($line =~ /(.*)\t(.*)/) {
-            $item{"title"} = $1;
-            $item{"word"} = $2;
+        if ($data =~ /(.*)\t(.*)/) {
+            $item{"word"} = $1;
+            $item{"title"} = $2;
         }else {
-            $item{"title"} = $data;
+            $item{"word"} = $data;
         }
+        InitNum(2);
         $item{"type"} = "l_c";
         say $OUT $json->encode(\%item);
         %item = ();
@@ -92,15 +126,30 @@ while (<$IN>) {
     # ```1 word```
     if ($flag == 1) {
         if ($line =~ /(.*)\t(.*)/) {
+            if (exists $item{"word"} and !exists $item{"img"}) {
+                my %tmpItem = %item;
+                push @wordArray,\%tmpItem;
+                %item = ();
+            }
+            InitNum(3);
             $item{"word"} = $1;
             $item{"def"} = $2;
             $item{"type"} = "w_c";
+            $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
             next;
         }
         if ($line =~ /jpeg|png/) {
+            if (@wordArray) {
+                foreach my $tmpItem (@wordArray) {
+                    ${$tmpItem}{"img"} = $line;
+                    say $OUT $json->encode($tmpItem);
+                    say $IMG_LOG " \t".$line;
+                }
+                @wordArray = ();
+            }
             $item{"img"} = $line;
-            $item{"audio"} = "";
             say $OUT $json->encode(\%item);
+            say $IMG_LOG " \t".$item{"img"};
             %item = ();
             next;
         }
@@ -109,9 +158,10 @@ while (<$IN>) {
     # ```2 phrase```
     if ($flag == 2 and
         $line =~ /(.*)\t(.*)/) {
+        InitNum(3);
         $item{"phrase"} = $1;
         $item{"def"} = $2;
-        $item{"audio"} = "";
+        $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
         $item{"type"} = "w_c";
         say $OUT $json->encode(\%item);
         %item = ();
@@ -148,6 +198,7 @@ while (<$IN>) {
     #```4 sentence```
     if ($flag == 4) {
         if ($line eq "==============================") {
+            PrintSentence(\@stcData) if @stcData;
             if ($stcFlag) {
                 $stcFlag = 0;
             }else {
@@ -156,7 +207,7 @@ while (<$IN>) {
             next;
         }
         if ($stcFlag) {
-            $item{"title"} = trim($line);
+            $item{"word"} = trim($line);
             $item{"type"} = "l_c";
             say $OUT $json->encode(\%item);
             %item = ();
@@ -172,7 +223,7 @@ while (<$IN>) {
             next;
         }
         if ($subStcFlag) {
-            $item{"title"} = trim($line);
+            $item{"word"} = trim($line);
             $item{"type"} = "l_d";
             say $OUT $json->encode(\%item);
             %item = ();
@@ -185,6 +236,7 @@ while (<$IN>) {
 
 close $IN;
 close $OUT;
+close $IMG_LOG;
 
 sub GetSenseData {
     my ($line,$data,$dataCN) = @_;
@@ -203,10 +255,11 @@ sub PrintSense {
 
     foreach my $num (0 .. $#{$data}) {
         if ($num % 2) {
+            InitNum(3);
             $senseItem{"cont"} = ${$data}[$num];
             $senseItem{"tran"} = ${$dataCN}[$num];
             $senseItem{"type"} = "w_d";
-            $senseItem{"audio"} = "";
+            $senseItem{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
             say $OUT $json->encode(\%senseItem);
             %senseItem = ();
         }else {
@@ -224,9 +277,10 @@ sub PrintSentence {
 
     foreach my $num (0 .. $#{$data}) {
         if ($num % 2) {
+            InitNum(3);
             $stcItem{"tran"} = ${$data}[$num];
             $stcItem{"type"} = "w_e";
-            $stcItem{"audio"} = "";
+            $stcItem{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
             say $OUT $json->encode(\%stcItem);
             %stcItem = ();
         }else {
@@ -240,10 +294,60 @@ sub PrintNote {
     my $dataArray = shift;
     my %noteItem = ();
 
-    @{$noteItem{"note"}} = map {$_."<br>";} @{$dataArray};
+    map {
+        if ($_ =~ /\.png|\.jpeg|\.jpg/) {
+            $_ =~ s/\.jpeg/.jpg/g;
+            my %item = ();
+            $item{"image"} = $_;
+            push @{$noteItem{"note"}},\%item;
+        } else {
+            push @{$noteItem{"note"}},ProcessNoteTitle($_)."<br>";
+        }
+    } @{$dataArray};
     $noteItem{"type"} = "w_d";
     say $OUT $json->encode(\%noteItem);
     @{$dataArray} = ();
+};
+
+sub InitNum {
+    my $flag = shift;
+    $flag //= 0;
+
+    if ($flag == 1) {
+        $chapterNum++;
+        $unitNum = 0;
+        $subNum = 0;
+    }elsif ($flag == 2) {
+        $unitNum++;
+        $subNum = 0;
+    }elsif ($flag == 3) {
+        $subNum++;
+    }
+};
+
+sub GetPronNum {
+    my ($chap,$unit,$word) = @_;
+    $chap //= 0;
+    $unit //= 0;
+    $word //= 0;
+    my $pronNum = "";
+
+    if ($chap < 1) {
+        return $pronNum;
+    }
+    else {
+        if ($unit != 0 and $word != 0) {
+            $pronNum = $chap*10000 + $unit*100 + $word;
+        }
+        elsif ($unit != 0) {
+            $pronNum = $chap*10000 + $unit*100;
+        }
+        else {
+            $pronNum = $chap*10000;
+        }
+
+        return $pronNum;
+    }
 };
 
 sub trim {
@@ -251,4 +355,18 @@ sub trim {
     $string =~ s/^\s+|\s+$//g;
     $string =~ s/ {2,}/ /g;
     return $string;
+};
+
+sub ProcessNoteTitle {
+    my $data = shift;
+
+    if ($data =~ /1 登机柜台/ or
+        $data =~ /2 查验护照/ or
+        $data =~ /3 安全检查/ or
+        $data =~ /4 进入登机门/ or
+        $data =~ /5 登机/) {
+        $data = "<h3>".$data."</h3>"
+    }
+
+    return $data;
 };

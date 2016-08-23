@@ -1,0 +1,54 @@
+use warnings;
+use strict;
+use Encode;
+use Data::Dumper;
+use JSON;
+use File::stat;
+use File::Basename;
+use feature qw(say);
+
+my $dtype = "shjd_hychsccj";
+my $tmp_file = "./tmp_data/".$dtype."_tmp_data.txt";
+my $tidy_file = "./tmp_data/".$dtype."_tidy_data.txt";
+my $img_path = "./original_data/shjd_hychsccj-web-resources/image/";
+
+my %staus = ("1117" => "[近]",
+             "1121" => "[例]",
+             "1125" => "[关]",
+             "1132" => "[反]",);
+my %info = ();
+GetInfoFromImg();
+ProcessTidyData();
+
+sub GetInfoFromImg {
+    my @imgs = glob $img_path."*";
+    foreach my $img (@imgs) {
+        my $size = stat($img)->size;
+        my $basename = basename $img;
+        if ($size == 1) {
+            $info{$basename} = $size;
+        }
+        say Dumper\%info;
+        exit;
+    }
+};
+
+sub ProcessTidyData {
+    open my $TMP ,"<", $tmp_file or die $!;
+    open my $TIDY ,">", $tidy_file or die $!;
+
+    my $prevLine = "";
+    while (<$TMP>) {
+        chomp;
+        my $line = $_;
+
+        # delete blank lines
+        next $prevLine eq $line;
+        
+        $prevLine = $line;
+        say $TIDY $line;
+    }
+    
+    close $TMP;
+    close $TIDY;
+};

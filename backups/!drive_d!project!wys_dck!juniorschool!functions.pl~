@@ -1,0 +1,992 @@
+use warnings;
+use strict;
+use JSON;
+use Data::Dumper;
+use Encode;
+use File::Find;
+use Cwd;
+use feature qw(say);
+
+1;
+
+sub get_file_list {
+
+    my $dir = $File::Find::name;
+    unless (-d $dir) {
+        print FL "$dir\n"
+            if $dir =~ /\.xml$/;
+    }
+}
+
+#处理初中数据
+sub get_data_jh {
+
+    my ($file,$fileName,$proWord) = @_;
+
+    open IN ,"< $file", or die $!;
+
+    my %body;
+    my $type = 0;
+    my @tmpArray;
+    my @array;
+    my @senArray;
+    my %senHash;
+    my $buff = "";
+
+    while (<IN>) {
+
+        chomp;
+        my $line = $_;
+        $line =~ s/\s{3,10}//g;
+        $line =~ s/ {2,}/ /g;
+        $buff =~ s/<span class="glossterms">(.+?)<\/span>/#@#$1@#@/g;
+        $buff .= $line;
+    }
+
+    # ===========_word_============
+    if ($buff =~ /Entry: (.*)<span class=('ipa'|"ipa"\/)>/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/##\d+;//g;
+        $tmpValue =~ s/&#\d+;//g;
+        $tmpValue =~ s/·//g;
+        $tmpValue =~ s/^\s+^|\s+$//g;
+        $body{"word"} = $tmpValue;
+    }
+
+    # ===========_pron_============
+    # if ($buff =~ /<span class='audio' name='pronunciation\/(.*\.mp3)'/ or
+    #     $buff =~ /<span class="audio" name="pronunciation\/(.*\.mp3)"/ or 
+    #     $buff =~ /<span class='audio' name=''/) {
+        # my $tmpValue = $1;
+        ${$body{"pron"}}{"v"} = 4;
+        ${$body{"pron"}}{"lang"} = "b";
+        $fileName =~ s/(.*).xml/$1/;
+        $fileName =~ s/-M\d+//g;
+        $fileName =~ s/ |\n|;//g;
+        $fileName =~ s/\/|\\/ /g;
+        ${$body{"pron"}}{"aw"} = lc ($fileName.".mp3");
+    # }
+    # if ($buff =~ /<span class='audio' name=''/) {
+    #     my $tmpValue = $1;
+    #     ${$body{"pron"}}{"v"} = 4;
+    #     ${$body{"pron"}}{"lang"} = "b";
+    #     ${$body{"pron"}}{"aw"} = $body{"word"}.".mp3";
+    # }
+
+    # ===========_symbol_============
+    # if ($line =~ /<li class="ipa">\/(.*)\/<\/li>/) {
+    #     my $tmpValue = $1;
+    #     $body{"symbol"} = $tmpValue;
+    # }
+
+    # ===========_sense&def_============
+    if ($buff =~ /(<td vAlign='top' align='right'>.*<\/tr>)/ or
+        $buff =~ /(<td vAlign="top" align="right">.*<\/tr>)/ or
+        $buff =~ /(<td nowrap='nowrap' vAlign='top' align='right'>.*<\/tr>)/
+        ) {
+            @tmpArray = split("</tr>",$1);
+            @array = grep(/[^\s]/,@tmpArray);
+            # @{$body{"a"}} = @tmpArray;
+        }
+    if (exists($array[0])) {
+        foreach my $var (@array) {
+            $var =~ /(.+?)<\/td>(.*)/;
+            my $tmpValue1 = $1;
+            my $tmpValue2 = $2;
+            my %tmpHash;
+            $tmpValue1 =~ s/<.+?>//g;
+            $tmpValue1 =~ s/&#\d+;//g;
+
+            $tmpValue2 =~ s/<span class="glossterms">(.+?)<\/span>/#@#$1@#@/g;
+            $tmpValue2 =~ s/<i>/#@#/g;
+            $tmpValue2 =~ s/<\/i>/@#@/g;
+            $tmpValue2 =~ s/<.+?>//g;
+            $tmpValue2 =~ s/#@#/<i>/g;
+            $tmpValue2 =~ s/@#@/<\/i>/g;
+            $tmpValue2 =~ s/&#\d+;//g;
+            $tmpValue2 =~ s/’/'/g;
+            $tmpValue2 =~ s/ {2,}/ /g;
+
+            if ($tmpValue1 =~ /\./) {
+
+                $tmpValue1 =~ s/\s+$//g;
+                $tmpHash{"pos"} = "<i>".$tmpValue1."</i>";
+            }
+            if ($tmpValue2 =~ s/(\[?[\x80-\xFF].+[\x80-\xFF]\]?)//g) {
+
+                $tmpHash{"chn"} = $1;
+                $tmpHash{"chn"} =~ s/…/···/g;
+                $tmpHash{"chn"} =~ s/^恤衫$/T恤衫/;
+                $tmpHash{"chn"} =~ s/^射线；X 光$/X 射线；X 光/;
+                $tmpHash{"chn"} =~ s/^ +//g;
+                $tmpHash{"chn"} =~ s/^é, etc 菜单$/菜单/;
+            }
+            if ($tmpValue2 ne "") {
+
+                $tmpHash{"eng"} = $tmpValue2;
+                $tmpHash{"eng"} =~ s/collar T$/collar/;
+                $tmpHash{"eng"} =~ s/airport X $/airport/;
+                $tmpHash{"eng"} =~ s/restaurant, caf$/restaurant, café, etc/;
+                $tmpHash{"eng"} =~ s/^ +//g;
+                $tmpHash{"eng"} =~ s/(\.|\!|\?)$//g;
+                $tmpHash{"eng"} =~ s/ +$//g;
+                if ($tmpHash{"eng"} =~ s/April 3$/April/) {
+                    $tmpHash{"chn"} = "3 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/May 4$/May/) {
+                    $tmpHash{"chn"} = "4 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/June 5$/June/) {
+                    $tmpHash{"chn"} = "5 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/July 6$/July/) {
+                    $tmpHash{"chn"} = "6 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/August 7$/August/) {
+                    $tmpHash{"chn"} = "7 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/September 8$/September/) {
+                    $tmpHash{"chn"} = "8 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/October 9$/October/) {
+                    $tmpHash{"chn"} = "9 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/November 10$/November/) {
+                    $tmpHash{"chn"} = "10 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/December 11$/December/) {
+                    $tmpHash{"chn"} = "11 ".$tmpHash{"chn"};
+                } elsif ($tmpHash{"eng"} =~ s/January 12$/January/) {
+                    $tmpHash{"chn"} = "12 ".$tmpHash{"chn"};
+                }
+
+            }
+            # $tmpValue2 =~ s/\s+$//g;
+            # $tmpValue2 .= "." if $tmpValue2 =~ /[A-Za-z0-9]$/;
+            # push (@{$body{"exp"}},$tmpValue2)
+            #     if $tmpValue2 ne "";
+            # push (@{$body{"sense"}},\%tmpHash);
+            push (@senArray,\%tmpHash);
+        }
+        undef @tmpArray;
+    }
+    if (exists($senArray[0])) {
+        if (@senArray == 1) {
+
+            @{$body{"paraphrase"}} = @senArray;
+        }elsif (!exists(${$senArray[0]}{"pos"})) {
+
+            my $x = @senArray;
+            my %item;
+            foreach my $var (@senArray) {
+
+                if ($x == @senArray) {
+
+                    $item{"chn"} = ${$var}{"chn"};
+                    $item{"eng"} = ${$var}{"eng"};
+                }else{
+
+                    if (defined ${$var}{"chn"}) {
+
+                        $item{"chn"} .= "；".${$var}{"chn"};
+                        $item{"chn"} =~ s/^；//g;
+                        $item{"chn"} =~ s/…/···/g;
+                    }
+                    if (defined ${$var}{"eng"}) {
+
+                        $item{"eng"} .= "; ".${$var}{"eng"};
+                        $item{"eng"} =~ s/^; //g;
+                        $item{"eng"} =~ s/ ; /; /g;
+                    }
+                }
+                $x--;
+            }
+            push (@{$body{"paraphrase"}},\%item);
+        }else{
+            foreach my $var (@senArray) {
+
+                if (exists(${$var}{"pos"})) {
+
+                    push (@{$body{"paraphrase"}},\%{$var});
+                }else{
+
+                    my $item = pop @{$body{"paraphrase"}};
+                    if (defined ${$var}{"chn"}) {
+
+                        ${$item}{"chn"} .= "；".${$var}{"chn"};
+                        ${$item}{"chn"} =~ s/^；//g;
+                        ${$item}{"chn"} =~ s/…/···/g;
+                    }
+                    if (defined ${$var}{"eng"}) {
+
+                        ${$item}{"eng"} .= "; ".${$var}{"eng"};
+                        ${$item}{"eng"} =~ s/^; //g;
+                        ${$item}{"eng"} =~ s/ ; /; /g;
+                    }
+
+                    push (@{$body{"paraphrase"}},\%{$item});
+                }
+            }
+        }
+    }
+
+    # ===========_example_============
+    if ($buff =~ /<legend>Example\(s\)<\/legend><ul>(.*)<\/ul>/) {
+        my $tmpValue = $1;
+        if ($tmpValue =~ /(<li>.*<\/li>)/) {
+            my $tmpValue1 = $1;
+            @{$body{"example"}} = split("</li>",$tmpValue1);
+            for my $var (0 .. $#{$body{"example"}}) {
+                ${$body{"example"}}[$var] =~ s/&#233;/é/g;
+                ${$body{"example"}}[$var] =~ s/<i>/#@#/g;
+                ${$body{"example"}}[$var] =~ s/<\/i>/@#@/g;
+                ${$body{"example"}}[$var] =~ s/<.*?>//g;
+                ${$body{"example"}}[$var] =~ s/&#\d+;//g;
+                ${$body{"example"}}[$var] =~ s/#@#/<i>/g;
+                ${$body{"example"}}[$var] =~ s/@#@/<\/i>/g;
+                ${$body{"example"}}[$var] .= "." if ${$body{"example"}}[$var] =~ /[A-Za-z0-9]$/ and $tmpValue !~ /Ray$/;;
+                ${$body{"example"}}[$var] =~ s/’/'/g;
+                ${$body{"example"}}[$var] =~ s/ {2,}/ /g;
+                ${$body{"example"}}[$var] = example_getColor(${$body{"example"}}[$var],$body{"word"},$proWord);
+                ${$body{"example"}}[$var] =~ s/B:/<br>B:/g;
+                ${$body{"example"}}[$var] =~ s/\\n/<br>/g;
+            }
+        }
+    }
+
+    # ===========_img_============
+    if ($buff =~ /<img src='.*\/(.*\.jpg)'/ or 
+        $buff =~ /<img src=".*\/(.*\.jpg)"/) {
+        my $tmpValue = $1;
+        $tmpValue =~ s/ //g;
+        $body{"img"} = lc $tmpValue;
+    }
+
+    return %body;
+    close IN;
+}
+
+sub example_getColor {
+
+    my ($example,$word,$proWord) = @_;
+    my $tarExample;
+
+    $word =~ s/\.$/#/g;
+    $word =~ s/…|\.|\?|\!//g;
+    $word =~ s/\// /g;
+    $word =~ s/#$/\./g;
+
+    my @wordData = ();
+    $example =~ s/(.)$//g;
+    my $end = $1;
+
+    if ($word eq "I" or
+		$word eq "go to bed") {
+
+        $tarExample = $example;
+        $tarExample =~ s/($word)/<color>$1<\/color>/g;
+    }
+	elsif ($word eq "will") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(won't)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(will)/<color>$1<\/color>/ig;
+    }
+	elsif ($word eq "goodbye (bye-bye)") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(goodbye)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(bye-bye)/<color>$1<\/color>/ig;
+    }
+	elsif ($word eq "how long") {
+
+        $tarExample = $example;
+        $tarExample =~ s/($word)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(shining)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "burn") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(burnt)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "meet") {
+
+        $tarExample = $example;
+        $tarExample =~ s/($word)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(met)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "PE (=physical education)") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(PE)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "Westerner") {
+
+        $tarExample = $example;
+        if ($tarExample =~ s/(Westerners')/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/(Westerners)/<color>$1<\/color>/ig) {}
+    }
+    elsif ($word eq "would") {
+
+        $tarExample = $example;
+        if ($tarExample =~ s/(wouldn't)/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/('d)/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/(would)/<color>$1<\/color>/ig) {}
+    }
+    elsif ($word eq "get ready for") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(getting ready to)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "enjoy oneself") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(enjoyed myself)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(enjoy yourself)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "in the future") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(in the future)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "Why not") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(Why don't)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(Why not)/<color>$1<\/color>/ig;   
+    }   
+    elsif ($word eq "close") {
+
+        $tarExample = $example;
+        if ($tarExample =~ s/(closer)/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/(closed)/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/(closing)/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/(close)/<color>$1<\/color>/ig) {}
+    }
+    elsif ($word eq "society") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(societies)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(society)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "a chess set") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(chess set)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(an)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "be able to") {
+
+        $tarExample = $example;
+        if ($tarExample =~ s/(be able to)/<color>$1<\/color>/ig) {}
+        else{
+
+            $tarExample =~ s/(able to)/<color>$1<\/color>/ig;
+            $tarExample =~ s/(is)/<color>$1<\/color>/ig;
+            $tarExample =~ s/<color>is<\/color> too/is too/ig;
+        }
+    }
+    elsif ($word eq "sb can't wait") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(Mary can't wait)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(Peter cannot wait)/<color>$1<\/color>/ig;
+        $tarExample =~ s/She cannot even wait/<color>She cannot<\/color> even <color>wait<\/color>/ig; 
+    }
+    elsif ($word eq "take sb's temperature") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(took Mary's temperature)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(took his temperature)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "can't help doing sth.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(couldn't help laughing)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(could not help speaking)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(can't help worrying)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "shelf") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(shelf)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(shelves)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "at the end of.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(at the end of)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "at the top of.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(at the top of)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "win the heart of sb.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(won the heart of that good-natured London boy)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "daily life") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(daily life)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(daily lives)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "stay in touch (with sb)") {
+
+        $tarExample = $example;
+        if ($tarExample =~ s/(stay in touch with each other)/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/(stay in close touch with my friends)/<color>stay in<\/color> close <color>touch with my friends<\/color>/ig) {}
+        elsif ($tarExample =~ s/(stay in touch)/<color>$1<\/color>/ig) {}
+    }
+    elsif ($word eq "wake sb up") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(wakes me up)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "show sb around") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(show you around)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "in one's opinion") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(In my opinion)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(In Mary's opinion)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "on one's own") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(on your own)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(on my own)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "be worried about") {
+
+        $tarExample = $example;
+        $tarExample =~ s/('m worried about)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(are very worried about)/<color>are<\/color> very <color>worried about<\/color>/ig;
+    }
+    elsif ($word eq "get into the habit of.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(got into the habit of)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "be angry with sb.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(were angry with her)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(was angry with myself)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "stop sb (from) doing sth.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(stop me going)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(stop me from meeting her)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(stop us from enjoying ourselves)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "take pride in") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(take great pride in)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(takes great pride in)/<color>$1<\/color>/ig;
+        $tarExample =~ s/( great )/<\/color>$1<color>/ig;
+    }
+    elsif ($word eq "keep sb sth away") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(kept him away)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "cut sth off sth.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(cut the wool off the sheep)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(cut a piece of cloth from her old dress)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "brush sth off sth.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(brush the hair off your jacket)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "be surprised at") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(was greatly surprised at)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(wasn't surprised at)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(be surprised at)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "difficulty") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(difficulty)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(difficulties)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "be in with a chance") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(are in with a great chance)/<color>$1<\/color>/ig;
+        $tarExample =~ s/( great )/<\/color>$1<color>/ig;
+        $tarExample =~ s/('re in with a chance)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(is in with a good chance)/<color>$1<\/color>/ig;
+        $tarExample =~ s/( good )/<\/color>$1<color>/ig;
+    }
+    elsif ($word eq "try one's best") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(trying their best)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(Try your best)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(tried my best)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "You're welcome.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(You are welcome)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "have got") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(have got)/<color>$1<\/color>/ig;
+        $tarExample =~ s/('ve got)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "at the bottom of.") {
+
+        $tarExample = $example;
+        $tarExample =~ s/(at the bottom of)/<color>$1<\/color>/ig;
+    }
+    elsif ($word eq "have") {
+        $tarExample = $example;
+        $tarExample =~ s/(haven't|have)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(They)('ve)/$1<color>$2<\/color>/ig;
+    }
+    elsif ($word eq "gentleman") {
+        $tarExample = $example;
+        $tarExample =~ s/(gentleman|gentlemen)/<color>$1<\/color>/ig;
+    }
+    else {
+
+        $example =~ s/\-/ \- /g if $word !~ /\-/;
+        my @exmpData = split / /,$example;
+
+        if ($word =~ /=/) {
+
+            @wordData = split /=| /,$word;
+            @wordData = map {$_ =~ s/^ | $//;$_} @wordData;
+        }elsif ($word =~ /\(/) {
+
+            $word =~ /(.*)\((.*)\)(.*)/;
+            my $tmpWord1 = $1.$3;
+            my $tmpWord2 = $1.$2.$3;
+
+            my @wordData1 = split / /,$tmpWord1;
+            my @wordData2 = split / /,$tmpWord2;
+
+            @wordData = (@wordData1,@wordData2);
+        }else {
+
+            @wordData = split / /,$word;
+        }
+        
+        my @finalWordData;
+        foreach my $var (@wordData) {
+
+            push @finalWordData,$var;
+            push @finalWordData,$var."'s";
+            push @finalWordData,$var."'m";
+            $var =~ s/e$//g;
+            push @finalWordData,$var."s";
+            push @finalWordData,$var."es";
+            push @finalWordData,$var."ed";
+            push @finalWordData,$var."ing";
+        }
+        foreach my $varExample (@exmpData) {
+
+            my $flag = 1;
+            my $tmpVarExample = $varExample;
+            $tmpVarExample =~ s/"|,|\.|\?|!|://g;
+            foreach my $varWord (@finalWordData) {
+                $varWord =~ s/[^A-Za-z0-9]$//g;
+                if ($flag) {
+                    my $lcVarExample = lc $varExample;
+                    if ($varWord =~ /^$tmpVarExample$/i or 
+                        (exists ${$proWord}{$lcVarExample} and ($varWord =~ /^${$proWord}{$lcVarExample}$/i))
+                       ) {
+
+                        $varExample =~ s/($tmpVarExample)/<color>$1<\/color>/g;
+                        $tarExample .= "$varExample ";
+                        $flag = 0;
+                    }
+                }
+            }
+
+            $tarExample .= "$varExample " if $flag;
+        }
+        if ($word !~ /'/) {
+
+            $tarExample =~ s/'(\w+)<\/color>/<\/color>'$1/g;
+        }
+        $tarExample =~ s/<\/color> <color>/ /g;
+        $tarExample =~ s/<\/color> \- <color>/\-/g;
+        
+        my @checkData = ();
+        if ($word =~ /(.*) = (.*)/) {
+
+            push @checkData,$1;
+            push @checkData,$2;
+        }
+        else {
+
+            @checkData = ($word);
+        }
+        foreach $word (@checkData) {
+
+            if ($tarExample =~ s/<color>($word)<\/color>/@#$1#@/ig or 
+                $tarExample =~ s/<color>(.* )?($word)<\/color>/$1@#$2#@/ig or
+                $tarExample =~ s/<color>($word)( .*)?<\/color>/$1@#$2#@/ig){
+
+                $tarExample =~ s/(<color>)|(<\/color>)//g;
+                $tarExample =~ s/@#/<color>/g;
+                $tarExample =~ s/#@/<\/color>/g;
+            }
+        }
+    }
+    $tarExample =~ s/ \- /\-/g;
+    $tarExample =~ s/ $//g;
+    $tarExample =~ s/ <color>  <\/color> //g;
+    $tarExample =~ s/ {2,}/ /g;
+    $tarExample .= $end;
+
+    return $tarExample;
+}
+
+#查找json文件列表
+sub get_tidy_list {
+    my $dir = $File::Find::name;
+    unless (-d $dir) {
+        print FL "$dir\n"
+            if $dir =~ /_tidy_data.txt$/;
+    }
+}
+
+#处理初中题目
+sub get_questions {
+
+    my ($file,$out,$quesDBRef) = @_;
+
+    my $jsonCoder = new JSON;
+
+    $file =~ /jh(\d+)/;
+    my $flag = $1;
+
+    my @tmpQuestions = get_QA($file);
+    open IN ,"< $file", or die $!;
+    open OUT ,"> $out", or die $!;
+    my $num = 1;
+    while (<IN>) {
+        my $item = $jsonCoder->decode($_);
+        my %item = %{$item};
+
+        my @tmpQue = correct_QA(\@tmpQuestions,$item,$quesDBRef);
+        my @questions;
+
+        my %checkHash;
+        $checkHash{$item{"word"}} = 1;
+        my $paraphrase = GetAllParaphrase($item{"paraphrase"});
+        $checkHash{$paraphrase} = 1;
+        while ($paraphrase =~ s/([\x80-\xff]+)//) {
+            my $tmpData = decode("utf8",$1);
+            my $a = decode("utf8","；|，|！|？");
+            $tmpData =~ s/$a/#/g;
+            map {$checkHash{$_} = 1;} split /#/,encode("utf8",$tmpData);
+        }
+
+        foreach my $var (@tmpQue) {
+            my $quesFlag = 1;
+            if (!exists $checkHash{${$var}{"word"}} and
+                !exists $checkHash{${$var}{"def"}}){
+                my $tmpFullDef = $checkHash{${$var}{"def"}};
+                my @tmpDefAry = ();
+
+                while ($tmpFullDef =~ s/([\x80-\xff]+)//) {
+                    my $tmpData = decode("utf8",$1);
+                    my $a = decode("utf8","；|，|！|？");
+                    $tmpData =~ s/$a/#/g;
+                    foreach my $tmpDef (split /#/,encode("utf8",$tmpData)) {
+                        if (exists $checkHash{$tmpDef}) {
+                            $quesFlag = 0;
+                            last;
+                        } else {
+                            push @tmpDefAry,$tmpDef;
+                        }
+                    }
+                }
+                if ($quesFlag) {
+                    $checkHash{${$var}{"word"}} = 1;
+                    $checkHash{${$var}{"def"}} = 1;
+                    map {$checkHash{$_} = 1;} @tmpDefAry;
+                    push @questions,$var;
+                }
+            }
+        }
+        my @ques;
+        ##########_Q1_##########
+        my %quesOne;
+        $quesOne{"type"} = 1;
+        $quesOne{"answer"} = $item{"word"};
+
+        my %q1Option1;
+
+        $q1Option1{"word"} = $item{"word"};
+        $q1Option1{"def"} = GetAllParaphrase($item{"paraphrase"});
+        $q1Option1{"img"} = $item{"img"}
+            if exists ($item{"img"});
+
+        my @tmpQ1Options;
+        push @tmpQ1Options,\%q1Option1;
+        my $desArray1 = desired(\@questions,2);
+        push @tmpQ1Options,@{$desArray1};
+
+        @tmpQ1Options = rand_array(@tmpQ1Options);
+        $quesOne{"option"} = \@tmpQ1Options;
+        $quesOne{"pron"} = $item{"pron"};
+        
+        push @ques,\%quesOne;
+        ##########_Q2_##########
+
+        my %quesTwo;
+        $quesTwo{"type"} = 2; 
+        ${$quesTwo{"answer"}}{"word"} = $item{"word"};
+        ${$quesTwo{"answer"}}{"def"} = GetAllParaphrase($item{"paraphrase"});
+        # ${$quesTwo{"answer"}}{"def"} = ${${$item{"sense"}}[0]}{"def"};
+        # $quesTwo{"option"} = \@tarArray;
+        $quesTwo{"pron"} = $item{"pron"};
+
+        push @ques,\%quesTwo;
+
+        ##########_Q3_########## 暂时不用
+        # else {
+
+        #     # ${${$item{"questions"}}{"3"}}{"answer"} = $item{"word"};
+        #     # ${${$item{"questions"}}{"3"}}{"pron"} = ${$item{"pron"}}{"aw"};
+        #     my %quesThree;
+        #     $quesThree{"type"} = 3;
+        #     my $tmpVar = $item{"word"};
+        #     $tmpVar =~ s/[^A-Za-z]//g;
+        #     ${$quesThree{"answer"}}{"word"} = $tmpVar;
+        #     ${$quesThree{"answer"}}{"def"} = ${${$item{"sense"}}[0]}{"def"};
+        #     $quesThree{"pron"} = $item{"pron"};
+
+        #     push @ques,\%quesThree;
+
+        # }
+
+        ##########_Q5_##########
+       
+        my %quesFive;
+        $quesFive{"type"} = 5;
+        ${$quesFive{"answer"}}{"word"} = $item{"word"};
+        ${$quesFive{"answer"}}{"def"} = GetAllParaphrase($item{"paraphrase"});
+
+        # ${$quesFive{"answer"}}{"def"} = ${$item{"sense"}[0]}{"def"};
+
+        my %q5Option1; 
+
+        $q5Option1{"word"} = $item{"word"};
+        $q5Option1{"def"} = ${$quesFive{"answer"}}{"def"};
+        # $q5Option1{"def"} = ${$item{"sense"}[0]}{"def"};
+        $q5Option1{"img"} = $item{"img"}
+            if exists ($item{"img"});
+
+        my @tmpQ5Options;
+        push @tmpQ5Options,\%q5Option1;
+        my $desArray5 = desired(\@questions,2);
+        push @tmpQ5Options,@{$desArray5};
+
+        @tmpQ5Options = rand_array(@tmpQ5Options);
+        foreach my $q5 (@tmpQ5Options) {
+
+            my %q5OptionHash;
+            $q5OptionHash{"def"} = ${$q5}{"def"};
+            push @{$quesFive{"option"}},\%q5OptionHash;
+        }
+        
+        push @ques,\%quesFive;
+        ##########_Q6_##########
+        my %quesSix;
+        $quesSix{"type"} = 6;
+        $quesSix{"answer"} = $item{"word"};
+        $quesSix{"pron"} = $item{"pron"};
+        push @ques,\%quesSix;
+
+        ##########_Q7_##########
+        my %quesSeven = %quesFive;
+        $quesSeven{"type"} = 7; #类型同5 为规避使用7
+
+        push @ques,\%quesSeven;
+        ##########__##########
+        $item{"questions"} = \@ques;
+        print OUT $jsonCoder->encode(\%item)."\n";
+    }
+    close IN;
+    close OUT;
+}
+
+#处理问题
+sub get_QA {
+
+    my ($in) = @_;
+    my $jsonCoder = new JSON;
+    my @one;
+
+    open IN ,"< $in", or die $!;
+    while (<IN>) {
+        my $item = $jsonCoder->decode($_);
+        my %item = %{$item};
+        my %question;
+        $question{"word"} = $item{"word"};
+        $question{"index"} = $item{"index"};
+        $question{"def"} = GetAllParaphrase($item{"paraphrase"});
+        $question{"img"} = $item{"img"}
+            if exists($item{"img"});
+        push(@one,\%question);
+    }
+    close IN;
+    return @one;
+}
+
+#处理题库数据
+sub correct_QA {
+
+    my ($qArray,$item,$quesDB) = @_;
+
+    my $indexNum = ${$item}{"index"};
+
+    my %tmpDBDate;
+    $tmpDBDate{"word"} = ${$item}{"word"};
+    $tmpDBDate{"def"} = GetAllParaphrase(${$item}{"paraphrase"});
+    # $tmpDBDate{"def"} = ${${${$item}{"sense"}}[0]}{"def"};
+    $tmpDBDate{"index"} = ${$item}{"index"};
+    $tmpDBDate{"img"} = ${$item}{"img"}    if exists ${$item}{"img"};
+
+    @{$quesDB} = @{$qArray}[0 .. 9]    if @{$quesDB} < 10;
+    push @{$quesDB},\%tmpDBDate;
+    shift @{$quesDB}   if @{$quesDB} > 50;
+
+    my @qArray = @{$qArray};
+
+    my @ultArray;
+
+    foreach my $var (@qArray) {
+
+        my $tmpIndex = ${$var}{"index"};
+       
+        if ($tmpIndex <= $indexNum) {
+            push @ultArray,$var;
+        }else {
+            next;
+        }
+    }
+
+    if (@ultArray < 50) {
+
+        for (0 .. $#{$quesDB}) {
+
+            last unless @ultArray < 50;
+            my $random = int rand @{$quesDB};
+            push @ultArray,${$quesDB}[$random];
+        }
+    }
+    my $quantity = int @ultArray/4;
+    for (1 .. $quantity) {
+
+        my $num = int rand @{$quesDB};
+        push @ultArray,${$quesDB}[$num];
+    }
+
+    my @tagArray = ();
+    my %delRepHash;
+
+    foreach my $varData (@ultArray) {
+
+        unless (exists $delRepHash{$varData}) {
+
+            push @tagArray,$varData;
+            $delRepHash{$varData} = 1;
+        }
+    }
+    return @tagArray;
+}
+
+sub rand_array {
+
+    my (@array) = @_;
+    my $jsonCoder = new JSON;
+
+    my @num = (0 .. @array-1);
+
+    for my $x (0 .. @array-1) {
+
+        my $y = int(rand(@array-1));
+        redo
+            if $x == $y and !(@num ~~ /$y/);
+
+        if (ref($array[$x]) eq 'HASH') {
+            my %tmp = %{$array[$x]};
+            $array[$x] = $array[$y];
+            $array[$y] = \%tmp;
+        }else{
+            my $tmp = $array[$x];
+            $array[$x] = $array[$y];
+            $array[$y] = $tmp;
+        }
+ 
+        @num = grep(/$y/,@num);
+       
+    }
+
+    return @array;
+}
+
+sub desired {
+
+    my ($array,$quantity) = @_;
+
+    my @tarArray;
+    my %flagHash;
+    # my @tmpArray = @{$array};
+
+    for (1 .. $quantity) {
+
+        my $randNum = int rand @{$array};
+        my %tmpData;
+
+        $tmpData{"word"} = ${${$array}[$randNum]}{"word"};
+        $tmpData{"def"} = ${${$array}[$randNum]}{"def"};
+        $tmpData{"img"} = ${${$array}[$randNum]}{"img"}
+            if exists ${${$array}[$randNum]}{"img"};
+        push @tarArray,\%tmpData;
+        my @foundlist = splice @{$array},$randNum,1;
+
+        # if (!exists $flagHash{$tmpData{"word"}}) {
+
+        #     $flagHash{$tmpData{"word"}} = 1;
+        # }else {
+
+        #     redo;
+        # }
+    }
+
+    return \@tarArray;
+}
+
+sub GetAllParaphrase {
+    my $paraphraseArray = shift;
+    my $paraphrase = "";
+
+    foreach my $tmpData (@{$paraphraseArray}) {
+        $paraphrase .= " ".${$tmpData}{"pos"} if exists ${$tmpData}{"pos"};
+        $paraphrase .= " ".${$tmpData}{"chn"} if exists ${$tmpData}{"chn"};
+        $paraphrase .= " ".${$tmpData}{"eng"} if exists ${$tmpData}{"eng"};
+        $paraphrase =~ s/ $//;
+        $paraphrase .= "<br>";
+    }
+    $paraphrase =~ s/ {2,}/ /g;
+    $paraphrase =~ s/^ //g;
+    $paraphrase =~ s/<br> /<br>/g;
+    $paraphrase =~ s/<br>$//;
+    $paraphrase =~ s/ $//;
+
+    return $paraphrase;
+}

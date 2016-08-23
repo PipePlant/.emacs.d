@@ -1,0 +1,40 @@
+use strict;
+use warnings;
+use JSON;
+use Data::Dumper;
+use Encode;
+use feature qw (say);
+
+my $json = new JSON;
+
+my $original_data = "./tmp_data/hdlg_swyynqjh.show3.txt";
+my $tidy_data = "./tmp_data/hdlg_swyynqjh_tidy.txt";
+
+my $buffer;
+{
+    local $/ = undef;
+    open my $ORIGINAL ,"<", $original_data or die $!;
+    $buffer = <$ORIGINAL>;
+    close $ORIGINAL;
+}
+open my $TIDY ,">", $tidy_data or die $!;
+
+$buffer =~ s/(overtime \(pay\)) (加班费)/$1\t$2/;
+$buffer =~ s/\t\t\t<table><tr><td>\\<\/td>\t<td>American English（美式）<\/td>\t<td>British English （英式）<\/td><\/tr>\n//;
+$buffer =~ s/\t\t\t<tr><td>公寓<\/td>\t<td>apartment<\/td>\t<td>flat<\/td><\/tr>\n//;
+$buffer =~ s/\t\t\t<tr><td>手电筒<\/td>\t<td>flashlight<\/td>\t<td>torch<\/td><\/tr>\n//;
+$buffer =~ s/\t\t\t<tr><td>汽油<\/td>\t<td>gas<\/td>\t<td>gasoline\/petrol<\/td><\/tr>\n//;
+$buffer =~ s/\t\t\t<tr><td>足球<\/td>\t<td>soccer<\/td>\t<td>football<\/td><\/tr>\n//;
+$buffer =~ s/\t\t\t<tr><td>假期<\/td>\t<td>vacation<\/td>\t<td>holiday<\/td><\/tr><\/table>\n//;
+$buffer =~ s/(常见的英美用词差异还有：\n)/$1\t<table border="1"><tr><th><\/th><th>American English（美式）<\/th><th>British English （英式）<\/th><\/tr><tr><th>公寓<\/th><td>apartment<\/td><td>flat<\/td><\/tr><tr><th>手电筒<\/th><td>flashlight<\/td><td>torch<\/td><\/tr><tr><th>汽油<\/th><td>gas<\/td><td>gasoline\/petrol<\/td><\/tr><tr><th>足球<\/th><td>soccer<\/td><td>football<\/td><\/tr><tr><th>假期<\/th><td>vacation<\/td><td>holiday<\/td><\/tr><\/table>\n/;
+$buffer =~ s/(\tA:Well done)/\tB:we have contacted three major newspapers and our press releases have been well received\. We are also considering using outdoor advertising\.\n$1/;
+$buffer =~ s/(I'm afraid I have to)…/$1\.\.\./;
+$buffer =~ s/(运动场所。)/$1\n\tA: Is there an outdoor pool\?/;
+$buffer =~ s/(\tbellboy\t行李员)/\toutdoor\t户外的\n$1/;
+$buffer =~ s/(情景14：)/$1职业前景如何/;
+$buffer =~ s/(1. )(面试刚开始的时候)/$1Could you tell me about yourself?$2/;
+$buffer =~ s/\t\tTips\n//g;
+$buffer =~ s/\t\t\t.+?\n//g;
+
+print $TIDY $buffer;
+close $TIDY;

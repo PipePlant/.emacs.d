@@ -1,0 +1,121 @@
+use warnings;
+use strict;
+use JSON;
+use Data::Dumper;
+use Encode;
+use File::Find;
+use File::Basename;
+use feature qw(say);
+
+require "./functions.pl";
+
+my $tmpdocument = "./tmpdocument/";
+
+my $jsonCoder = new JSON;
+
+##############_File List_##############
+my $fl = $tmpdocument."fileList.txt";
+open FL ,"> $fl", or die $!;
+find(\&get_file_list,'.');
+close FL;
+
+##############_Clean File_##############
+my $clean = unlink glob "./$tmpdocument/*tidy_data*";
+print "$clean files cleaned and ready!\n";
+
+##############_Open File_##############
+my $proWord_file = "D:/project/prototype_word/EN_prototype.txt";
+
+my %proWord;
+open PRO ,"< $proWord_file", or die $!;
+while (<PRO>) {
+    
+    $_ =~ /(.*)\t(.*)/;
+    $proWord{$1} = $2;
+}
+close PRO;
+
+open FL ,"< $fl", or die $!;
+
+while (<FL>) {
+    my $fileDir = $_;
+    my $dir = dirname $fileDir;
+    my $fileName = basename $fileDir;
+    
+    $dir =~ /(jh\d+)/;
+    my $flag = $1;
+    my $out = $tmpdocument.$flag."_tidy_data.txt";
+	
+	my %body = get_data_jh($fileDir,$fileName,\%proWord);
+
+	# ===========_index_============
+    if ($fileDir =~ /-M(\d+)\.xml/) {
+
+        $body{"index"} = int $1;
+    }
+
+    # ===========_realaw_============
+    if ($body{"word"} eq "a(n)") {
+        
+        ${$body{"pron"}}{"realaw"} = "a an";
+    }else {
+
+        my $realaw = $body{"word"};
+        $realaw =~ s/=/ /g;
+        $realaw =~ s/\(.+?\)//g;
+        $realaw =~ s/\.|\?|!//g;
+        $realaw =~ s/\// /g;
+        $realaw =~ s/ {2,}/ /g;
+        $realaw =~ s/é/e/g;
+        ${$body{"pron"}}{"realaw"} = $realaw;
+    }
+
+    if ($body{"word"} eq "ready" and 
+        ${$body{"paraphrase"}[0]}{"chn"} eq "乐意的") {
+        delete $body{"img"};
+    } elsif ($body{"word"} eq "light" and 
+        ${$body{"paraphrase"}[0]}{"chn"} eq "电灯") {
+        delete $body{"img"};
+    }
+
+    if ($body{"word"} =~ /^(morning|your|sorry|can|you|yes|how|fine|Mrs|too|this|nice|meet|now)$/ or
+        $body{"word"} =~ /^(listen|draw|here|old|how old|bag)$/ or
+        $body{"word"} =~ /^(OK|pen|of course|know|that|again|and)$/ or
+        $body{"word"} =~ /^(warm|like|let|idea)$/ or
+        $body{"word"} =~ /^(from|where|not|hi|but|very|last|all)$/ or
+        $body{"word"} =~ /^(family|father|mother|photo|they|left|on the left|right|on the right|next|next to|driver|same|their)$/ or
+        $body{"word"} =~ /^(many|oh|dining hall|for)$/ or
+        $body{"word"} =~ /^(food|potato|tomato|go shopping|much|right)$/ or
+        $body{"word"} =~ /^(then|difficult|talk|when|watch)$/ or
+        $body{"word"} =~ /^(make)$/ or
+        $body{"word"} =~ /^(ugh|look|sure|there|over there|about|as well as|people|large)$/ or
+        $body{"word"} =~ /^(special|give|sing|shoe|money|match)$/ or
+        $body{"word"} =~ /^(line|wait|wait for|moment|still|run)$/ or
+        $body{"word"} =~ /^(speak|at the moment|beautiful|merry)$/ or
+        $body{"word"} =~ /^(think)$/) {
+        foreach my $paraphrase (@{$body{"paraphrase"}}) {
+            ${$paraphrase}{"chn"} =~ s/；/，/g;
+        }
+    }
+
+    open OUT ,">> $out", or die $!;
+    my $data = $jsonCoder->encode(\%body);
+    $data =~ s/(\(|\（) /$1/g;
+    $data =~ s/ (\)|\）)/$1/g;
+
+    if ($data =~ /"word":"no"/) {$data =~ s/不；不/不，不/;}
+    elsif ($data =~ /"word":"Chinese"/) {$data =~ s/的；中/的，中/;}
+    elsif ($data =~ /"word":"first"/) {$data =~ s/的；首/的，首/;}
+    elsif ($data =~ /"word":"some"/) {$data =~ s/干；一/干，一/;$data =~ s/些；某/些，某/;}
+
+    $data =~ s/(pl\.)/<i>$1<\/i>/g;
+    $data =~ s/<i><i>/<i>/g;
+    $data =~ s/<\/i><\/i>/<\/i>/g;  
+    $data =~ s/( etc)([^\.])/$1\.$2/g;
+        
+    print OUT $data."\n";
+
+    close OUT;
+}
+
+close FL;

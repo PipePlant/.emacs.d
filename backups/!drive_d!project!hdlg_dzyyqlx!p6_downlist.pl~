@@ -1,0 +1,58 @@
+use strict;
+use warnings;
+use JSON;
+use Data::Dumper;
+use Encode;
+use File::stat;
+use File::Find;
+use feature qw (say);
+
+my $jsonCode = new JSON;
+my @downList;
+
+my $des = "./final_data/hdlg_dzyyqlx.studydescription.txt";
+my $out = "./final_data/hdlg_dzyyqlx.download_packagelist.txt";
+my $folder = "./hdlg_dzyyqlx_kc_lixian_gzip/";
+
+open DES ,"< $des", or die $!;
+open OUT ,"> $out", or die $!;
+
+my $unitWord = "";
+
+while (<DES>) {
+
+	my %downUnit;
+	$_ =~ /(.*)\t(.*)/;
+	my $name = $1;
+	my $data = $jsonCode->decode($2);
+
+	if ($name =~ /kca\d+$/) {
+
+		$downUnit{"word"} = ${$data}{"title"};
+		$downUnit{"id"} = ${$data}{"key"};
+		push @downList,\%downUnit;
+	}
+	# elsif ($name =~ /kcb(\d+)$/) {
+
+	# 	my $num = int $1;
+	# 	$downUnit{"word"} = "$unitWord 第$num单元";
+	# }
+}
+
+close DES;
+
+my @tgzFileFolder = glob "./$folder/*.tgz";;
+
+foreach my $var (@tgzFileFolder) {
+	
+	my $size = stat($var)->size();
+	$var =~ s/.*\/\/(.+?)$/$1/g;
+
+	my $tmpHash = shift @downList;
+	${$tmpHash}{"packagename"} = $var;
+	${$tmpHash}{"size"} = $size;
+	push @downList,$tmpHash;
+}
+say OUT $jsonCode->encode(\@downList);
+
+close OUT;

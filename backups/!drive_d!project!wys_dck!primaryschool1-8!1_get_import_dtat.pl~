@@ -1,0 +1,79 @@
+use warnings;
+use strict;
+use JSON;
+use Data::Dumper;
+use Encode;
+use File::Find;
+use File::Basename;
+use feature qw(say);
+
+require "./functions.pl";
+
+my $tmpdocument = "./tmpdocument/";
+
+my $jsonCoder = new JSON;
+
+##############_File List_##############
+my $fl = $tmpdocument."fileList.txt";
+open FL ,"> $fl", or die $!;
+find(\&get_file_list,'.');
+close FL;
+
+##############_Clean File_##############
+my $clean = unlink glob "./$tmpdocument/*tidy_data*";
+print "$clean files cleaned and ready!\n";
+
+##############_Open File_##############
+my $proWord = "D:/project/prototype_word/EN_prototype.txt";
+
+my %proWord;
+open PRO ,"< $proWord", or die $!;
+while (<PRO>) {
+
+    $_ =~ /(.*)\t(.*)/;
+    $proWord{$1} = $2;
+}
+close PRO;
+
+open FL ,"< $fl", or die $!;
+
+while (<FL>) {
+    my $fileDir = $_;
+    my $dir = dirname $fileDir;
+    my $fileName = basename $fileDir;
+
+    $dir =~ /(\d+l\d+)/;
+    my $flag = $1;
+    my $out = $tmpdocument.$flag."_tidy_data.txt";
+
+    my %body = get_data_p8($fileDir,$fileName,\%proWord);
+	# ===========_index_============
+    if ($fileDir =~ /-M(\d+)\.xml/) {
+
+        $body{"index"} = int $1;
+    }
+
+    # ===========_realaw_============
+    if ($body{"word"} eq "a(n)") {
+        
+        ${$body{"pron"}}{"realaw"} = "a an";
+    }
+    else {
+
+        my $realaw = $body{"word"};
+        $realaw =~ s/=/ /g;
+        $realaw =~ s/\(|\)//g;
+        $realaw =~ s/\.|\?|!//g;
+        $realaw =~ s/ {2,}/ /g;
+        ${$body{"pron"}}{"realaw"} = $realaw;
+    }
+
+    open OUT ,">> $out", or die $!;
+
+    print OUT $jsonCoder->encode(\%body)."\n"
+        if %body;
+
+    close OUT;
+}
+
+close FL;
