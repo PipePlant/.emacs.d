@@ -3,12 +3,16 @@ use strict;
 
 # my $tmpdocument="./primaryschool1-12/";
 # my $txtfile = "./primaryschool1-12/wys_dckxxfo_exam.txt";
-my $tmpdocument="./primaryschool1-8/";
-my $txtfile = "./primaryschool1-8/wys_dckxxft_exam.txt";
-# my $tmpdocument="./juniorschool/";
-# my $txtfile = "./juniorschool/wys_dckcz_.dict_sort.txt";
+# my $tmpdocument="./primaryschool1-8/";
+# my $txtfile = "./primaryschool1-8/wys_dckxxft_exam.txt";
+my $tmpdocument="./juniorschool/";
+my $txtfile = "./juniorschool/wys_dckcz_.dict_sort.txt";
 # my $tmpdocument="./highschool/";
 # my $txtfile = "./highschool/wys_dckgz_.dict_sort.txt";
+# my $tmpdocument="./primaryschool1-12/";
+# my $txtfile = "./primaryschool1-12/wys_dckxxfo_exam.txt";
+# my $tmpdocument="./primaryschool1-8/";
+# my $txtfile = "./primaryschool1-8/wys_dckxxft_exam.txt";
 
 my ($fileHead) = ($txtfile =~ m/^(.*)\./);
 print $fileHead."\n";

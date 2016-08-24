@@ -21,14 +21,12 @@ my $exam_file = "./wys_dckxxfo_exam.txt";
 open my $EXAM ,">", $exam_file or die $!;
 
 foreach my $file (@dataFile) {
-
     $file =~ /1l(\d+)/;
     my $book = $1;
     my %detailsData;
     
     open my $DATA ,"<", $file or die $!;
     while (<$DATA>) {
-
         my $line = $_;
         $line =~ /\t(\d+)\t.*"index":(\d+).*/g;
         
@@ -39,30 +37,25 @@ foreach my $file (@dataFile) {
     }
 
     foreach my $module (sort {$a <=> $b} keys %detailsData) {
-
         # 一个module的全部套题
-        my $examData = GetExamData($book,$module,\%detailsData);       
+        my $examData = GetExamData($book,$module,\%detailsData);
         # my $examID = ($dtypeID << 16) | ($book << 12) | ($module << 7);
         my @typeNum = (0,0,0,0,0);
-        # say Dumper\$examData;
-        # exit;
+        
         foreach my $exam (@{$examData}) {
-
             my $type;
             my $outPutData;
             
             ($type,$outPutData) = TypeAndFinalData($exam);
-
-            $typeNum[$type-1]++;
+            $typeNum[$type]++;
 
             my $examID = 0;
-            if ($flag) {
-                
-                $examID = ($dtypeID << 16) | ($book << 12) | ($module << 8) | ($typeNum[$type-1] - 1 << 3) | $type;
+            if ($flag) {                
+                $examID = ($dtypeID << 16) | ($book << 12) | ($module << 8) | ($typeNum[$type] << 3) | $type;
+                # say $module."\t".$typeNum[$type]."\t".$type;
             }
-            else {
-                
-                $examID = ($dtypeID << 16) | ($book-1 << 12) | ($module-1 << 8) | ($typeNum[$type-1] - 1 << 3) | $type;
+            else {            
+                $examID = ($dtypeID << 16) | ($book-1 << 12) | ($module-1 << 8) | ($typeNum[$type]-1 << 3) | $type;
             }
 
             my %outPutItem;
@@ -76,12 +69,10 @@ foreach my $file (@dataFile) {
 close $EXAM;
 
 sub SortByBook {
-
     ($a =~ /l(\d+)_/)[0] <=> ($b =~ /l(\d+)_/)[0];
 };
 
 sub GetExamData {
-
     my ($book,$module,$details) = @_;
     my @examData = ();
     my @moduleKey = (1 .. $module);
@@ -90,10 +81,8 @@ sub GetExamData {
     my @jichuKey = ($module);
     
     # ~~~只含有基础题库~~~
-    if ($module == 1) {
-        
+    if ($module == 1) {        
         foreach my $times (1 .. 13) {
-
             push @examData,@{CreatExam(\@jichuKey,$details)};
         }
         
@@ -101,21 +90,17 @@ sub GetExamData {
 
         return \@examData
     }
-    elsif ($module == 2 or $module == 3) {
-        
+    elsif ($module == 2 or $module == 3) {        
         foreach my $times (1 .. 3) {
-
             push @examData,@{CreatExam(\@jichuKey,$details)};
         }
         
         my @beixuanKey = ($moduleKey[-1],$moduleKey[-2]);
         foreach my $times (1 .. 3) {
-
             push @examData,@{CreatExam(\@beixuanKey,$details)};
         }
 
         foreach my $times (1 .. 7) {
-
             push @examData,@{CreatExam(\@moduleKey,$details)};
         }
 
@@ -128,12 +113,10 @@ sub GetExamData {
         
         my @beixuanKey = ($moduleKey[-1],$moduleKey[-2]);
         foreach my $times (1 .. 2) {
-
             push @examData,@{CreatExam(\@beixuanKey,$details)};
         }
 
         foreach my $times (1 .. 10) {
-
             push @examData,@{CreatExam(\@moduleKey,$details)};
         }
 
@@ -143,18 +126,15 @@ sub GetExamData {
 };
 
 sub CreatExam {
-
-    my ($moduleKey,$details) = @_;
-
+    my ($moduleKey,$details) = @_;    
     my @source = ();
     map {push @source,@{${$details}{$_}};} @{$moduleKey};
     my @target = ();
-    
+
     # 单词不够8个，只取全能题
-    if ($#source < 8) {
+    if (scalar @source < 8) {
 
         # foreach my $time (1 .. 5) {
-
             my @randList = shuffle @source;
             push @target,MakeExamAllType(\@randList,"less");
         # }
@@ -164,8 +144,7 @@ sub CreatExam {
         my @randList = ();
 
         # ```音、形、意、表达```
-        foreach my $type (1,2,4,6) {
-
+        foreach my $type (1,2,7,6) {
             @randList = (shuffle @source)[0 .. 7];
             push @target,MakeExamFourType(\@randList,$type);
         }
@@ -179,7 +158,6 @@ sub CreatExam {
 };
 
 sub MakeExamFourType {
-
     # ```音、形、意、表达类型试卷```
     my ($data,$type) = @_;
     my @exam = ();
@@ -190,33 +168,29 @@ sub MakeExamFourType {
 };
 
 sub MakeExamAllType {
-
     # ```全能试卷```
     my ($data,$examType) = @_;
     my @exam = ();
-    my @quesType = (1,2,4,6);
+    my @quesType = (1,2,7,6);
     
     if ($examType eq "less") {
-        
         my @lessQuesType = (@quesType,@quesType);
         my %checkHash = ();
 
         foreach my $type (@lessQuesType) {
-
             my $item = shuffle @{$data};
-            if (exists $checkHash{$type}) {
-                redo if $checkHash{$type} eq $item;
+            
+            if (exists $checkHash{$type."_".$item}) {
+                redo;
             }
             my %ques;
             $ques{$item} = $type;
             push @exam,\%ques;
-            $checkHash{$type} = $item;
+            $checkHash{$type."_".$item} = 1;
         }
     }
     else {
-
         foreach my $num (0 .. 7) {
-            
             my %ques;
             $ques{${$data}[$num]} = $quesType[$num % 4];
             push @exam,\%ques;
@@ -227,7 +201,6 @@ sub MakeExamAllType {
 };
 
 sub TypeAndFinalData {
-
     my ($originData) = @_;
 
     my @targetData = ();
@@ -235,8 +208,7 @@ sub TypeAndFinalData {
     my %typeHash;
 
     # ```make data
-    foreach my $item (@{$originData}) {
-        
+    foreach my $item (@{$originData}) {      
         my ($key,$value) = each %{$item};
         push @targetData,int $key;
         # push @targetData,$item;
@@ -246,14 +218,12 @@ sub TypeAndFinalData {
     # ```chose type
     my @tmpTypes = keys %typeHash;    
     if (@tmpTypes == 1) {
-
         $type = 0 if $tmpTypes[0] == 1;
         $type = 1 if $tmpTypes[0] == 2;
-        $type = 2 if $tmpTypes[0] == 4;
+        $type = 2 if $tmpTypes[0] == 7;
         $type = 3 if $tmpTypes[0] == 6;
     }
     else {
-
         $type = 4;
     }
 

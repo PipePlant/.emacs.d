@@ -18,8 +18,10 @@ my $buffer;
     close $ORIG;
 }
 
+$buffer =~ s/(母鸡<\/span><\/p>\n)\t{3}<p class="x-- para-style-override-29" xml:lang="en-US">/$1\t\t\t<p class="x--" xml:lang="en-US">/g;
 $buffer =~ s/\t\t\t<p class="x-- para-style-override-29" xml:lang="en-US"><span class="char-style-override-23">&#160;<\/span><\/p>\n\t\t\t<p class="x---- para-style-override-31" xml:lang="zh-CN">&#160;<\/p>\n//g;
 $buffer =~ s/(<.+?para-style-override-(29|30)" xml:lang="en-US">)/\n$1\n/g;
+$buffer =~ s/<span class="char-style-override-25" xml:lang="ko-KR"> <\/span><\/p>\n\t{3}<p class="x--" xml:lang="en-US"><span class="char-style-override-25" xml:lang="ko-KR"> <\/span>//g;
 
 my @textData = split /\n/,$buffer;
 
@@ -27,6 +29,7 @@ my @textData = split /\n/,$buffer;
 open my $OUT ,">", $out_file or die $!;
 my @levelAry = ();
 foreach my $line (@textData) {
+
     # ```level A```
     if ($line =~ /class="x-- para-style-override-20" xml:lang="en-US">(.+?)</) {
         push @levelAry,$1;
@@ -69,7 +72,6 @@ foreach my $line (@textData) {
         $line =~ s/<p class="x-- para-style-override-25" xml:lang="en-US">//g;
         $line =~ s/<p class="p0" xml:lang="en-US">//g;
         $line =~ s/<span class="x--" xml:lang=".+?">//g;
-        $line =~ s/<span class="char-style-override-\d+" xml:lang=".+?">//g;
         $line =~ s/<span class="x------"><img .+?(\d+\.\w+)" \/>/$1/g;
         $line =~ s/<span class="char-style-override-(13|23|24|25|27|30|31|41|42)">//g;
         $line =~ s/<span class="x-- char-style-override-(26|33)" xml:lang="ko-KR">//g;
@@ -79,6 +81,8 @@ foreach my $line (@textData) {
         $line =~ s/^<\/span>//g;
         $line =~ s/<\/span>·<\/span>/·/g;
         $line =~ s/<span class="char-style-override-28">h<\/span>/<sup>h<\/sup>/g;
+        $line =~ s/<span class="char-style-override-28" xml:lang="ko-KR">h<\/span>/<sup>h<\/sup>/g;
+        $line =~ s/<span class="char-style-override-\d+" xml:lang=".+?">//g;
         
         $line =~ s/([^<])\//$1\t\//g;
         $line =~ s/\】 /\】\t/g;
@@ -100,7 +104,8 @@ foreach my $line (@textData) {
         $line =~ s/&#9;//g;
         $line =~ s/ +$//g;
         $line =~ s/A\t\/S/A\/S/;
-
+        $line =~ s/\t$//;
+        
         if ($line =~ /\((.+?)\)/) {
             my $tmp1 = $1;
             my $tmp2 = $1;

@@ -1,0 +1,33 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use Encode;
+use JSON;
+use feature qw(say);
+
+my %bookList = ();
+open my $CHECK ,">", "./v2_data/final_data/tidy_check.txt" or die $!;
+foreach my $bookNum (1 .. 12) {
+    my $final_file = "./v2_data/final_data/1l".$bookNum."_additional_final.txt";
+    $bookList{"1l".$bookNum} = 1;
+    open my $FINAL ,"<", $final_file or die $!;
+
+    while (<$FINAL>) {
+        $_ =~ /(.*)\t\[(.*)\]$/;
+        my $stce = $1;
+        my $pron = $2;
+        if ($pron) {
+            say $CHECK $stce if $pron =~ /zhanque/;
+        }
+        else {
+            if ($bookList{"1l".$bookNum}) {
+                $bookList{"1l".$bookNum} = 0;
+                say $CHECK "1l".$bookNum;
+            }
+            say $CHECK $stce;
+        }
+    }
+    
+    close $FINAL;
+}
+close $CHECK;
