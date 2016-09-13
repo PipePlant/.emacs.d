@@ -1,0 +1,142 @@
+use warnings;
+use strict;
+use Data::Dumper;
+use feature qw(say);
+use LWP;
+use HTTP::Request;
+use JSON;
+use Encode;
+
+my $data = "./sh_tmp_schools.txt";
+
+# ```get school data```
+open DATA ,"< $data", or die $!;
+my @data = <DATA>;
+close DATA;
+
+# ```get province num```
+my %province_num;
+my $province_list = "./sh_tmp_provinces.txt";
+open PNUM ,"< $province_list", or die $!;
+while (<PNUM>) {
+
+	$_ =~ /(.*)\t(.*)/;
+	$province_num{$1} = $2;
+}
+close PNUM;
+
+# ```get area num```
+my %area_num;
+my $area_list = "./sh_tmp_areas.txt";
+open ANUM ,"< $area_list", or die $!;
+while (<ANUM>) {
+
+	$_ =~ /(.*)\t(.*)/;
+	$area_num{$1} = $2;
+}
+close ANUM;
+
+# ```get city num```
+my %city_num;
+my $city_list = "./sh_tmp_cities.txt";
+open CNUM ,"< $city_list", or die $!;
+while (<CNUM>) {
+
+	$_ =~ /(.*)\t(.*)/;
+	$city_num{$1} = $2;
+}
+close CNUM;
+
+# ```~~~```
+my $province_out = "./sh_provinces.txt";
+my $city_out = "./sh_cities.txt";
+my $area_out = "./sh_areas.txt";
+my $school_out = "./sh_schools.txt";
+
+open POUT ,"> $province_out", or die $!;
+open COUT ,"> $city_out", or die $!;
+open AOUT ,"> $area_out", or die $!;
+open SOUT ,"> $school_out", or die $!;
+
+my $provinceNum = 100000;
+my $cityNum;
+my $areaNum;
+my $schoolNum = 2000;
+
+my $tmpC;
+my $tmpA;
+
+my $provinceFlag = "";
+my $cityFlag = "";
+my $areaFlag = "";
+
+my $pSerial = 0;
+my $cSerial = 0;
+
+foreach my $line (@data) {
+
+	chomp $line;
+
+	if ($line =~ /^\d+$/) {
+
+		# ---province---
+		my $pBase = int($line / 10000);
+		my $province = $pBase * 10000;
+		if (exists $province_num{$province}) {
+
+			if ($provinceFlag ne $province_num{$province}) {
+
+				$provinceFlag = $province_num{$province};
+				$provinceNum += 10000;
+				$pSerial = int ($provinceNum / 10000);
+				$cityNum = $pSerial * 10000;
+				say POUT $provinceNum."\t".$province_num{$province};
+			}
+		}
+
+		# ---city---
+		my $cBase = int($line / 100);
+		my $city = $cBase;
+		if (exists $city_num{$city}) {
+
+			if ($cityFlag ne $city_num{$city}) {
+
+				$cityFlag = $city_num{$city};
+				$cityNum += 100;
+				$cSerial = int ($cityNum / 100);
+				$areaNum = $cSerial * 100;
+				say COUT $cityNum."\t".$city_num{$city};
+				$tmpC = $city_num{$city};
+			}
+		}
+		
+		# ---area---
+		if (exists $area_num{$line}) {
+
+			$areaNum++;
+			$schoolNum = $areaNum * 10000 + 2000;
+			say AOUT $areaNum."\t".$area_num{$line};
+			$tmpA = $area_num{$line};
+		}
+	}
+
+	# ---school---
+	else {
+
+		$schoolNum++;
+		my $schoolName = $line;
+
+		# $schoolName =~ s/$tmpC//g;
+		$tmpC =~ s/市//g;
+		# $schoolName =~ s/$tmpC//g;
+		# $schoolName =~ s/$tmpA//g;
+		$schoolName =~ s/^ *| *$//g;
+
+		say SOUT $schoolNum."\t".$schoolName;
+	}
+}
+
+close POUT;
+close COUT;
+close AOUT;
+close SOUT;

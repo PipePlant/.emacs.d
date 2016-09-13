@@ -1,0 +1,181 @@
+use warnings;
+use strict;
+use Data::Dumper;
+use feature qw(say);
+use JSON;
+use Encode;
+
+my $in_region = "./juniorregion_list.txt";
+my $in_school = "./rd_school.txt";
+my $out = "./juniorschool_json.txt";
+
+my $jsonCoder = new JSON;
+
+open IN_R ,"< $in_region", or die $!;
+
+my %regionsList;
+while (<IN_R>) {
+	chomp;
+
+	my $line = $_;
+	$line =~ /\((\d+),'(.*)'.*\t(\d+)/;
+	my %tmpHash;
+	$tmpHash{"reg"} = $2;
+	$tmpHash{"code"} = $3;
+	$regionsList{$1} = \%tmpHash;
+
+}
+
+close IN_R;
+
+open IN_S ,"< $in_school", or die $!;
+open OUT ,"> $out", or die $!;
+
+my @object;
+my @regionPrvc;
+my %regionPrvcHash;
+my @regionCity;
+my %regionCityHash;
+my @regionArea;
+my %regionAreaHash;
+my @schools;
+
+my $flag_p = 1;
+my $flag_c = 1;
+my $flag_a = 33;
+my %preSchool;
+my $num = 1;
+
+while (<IN_S>) {
+
+	my $line = $_;
+
+    next if $line =~ /^#/;
+    
+	my %schoolHash;
+
+	$line =~ /\((\d+),'(.*)',(\d+),(\d+),(\d+),.*/;
+	$schoolHash{"school"} = $2;
+	$schoolHash{"province"} = int $3;
+	$schoolHash{"city"} = int $4;
+	$schoolHash{"area"} = int $5;
+	my $num = $1;
+
+	my $flag = decChange(\%schoolHash,$flag_p,$flag_c,$flag_a);
+
+	addInfo($flag,\%preSchool,$flag_p,$flag_c,$flag_a)
+		if $flag;
+
+	my $var = regionInfo($flag_p,$flag_c,$flag_a);
+	my %varHash = %{$var};
+	my $idNum = $varHash{"code"}*100000+$num;
+	my %tmpHash;
+	$tmpHash{"school"} = $schoolHash{"school"};
+	$tmpHash{"id"} = $idNum;
+	push @schools,\%tmpHash;
+
+	$flag_p = $schoolHash{"province"};
+	$flag_c = $schoolHash{"city"};
+	$flag_a = $schoolHash{"area"};
+	%preSchool = %schoolHash;
+
+}
+
+decChange(\%preSchool,$flag_p,$flag_c,$flag_a);
+addInfo(1,\%preSchool,$flag_p,$flag_c,$flag_a);
+
+say OUT $jsonCoder->encode(\@object);
+
+close IN_S;
+close OUT;
+
+#=====================
+#判断省、市、区的变化
+#=====================
+sub decChange {
+
+	my ($school,$flag_p,$flag_c,$flag_a) = @_;
+	my %school = %{$school};
+
+	if ($school{"province"} != $flag_p) {
+		return 1;
+	}elsif ($school{"city"} != $flag_c) {
+		return 2;
+	}elsif ($school{"area"} != $flag_a) {
+		return 3;
+	}else {
+		return 0;
+	}
+
+}
+
+#=====================
+#信息的结构化 
+#=====================
+sub addInfo {
+
+	my ($flag,$school,$p,$c,$a) = @_;
+	my %school = %{$school};
+	my $region = regionInfo($p,$c,$a);
+	my %region = %{$region};
+
+	if ($flag == 3 or
+		$flag == 2 or
+		$flag == 1) 
+	{
+		$num = 1;
+		my @tmpArray = @schools;
+		$regionAreaHash{"schools"} = \@tmpArray;
+		$regionAreaHash{"area"} = $region{"area"};
+		undef @schools;
+
+		my %tmpHash = %regionAreaHash;
+		push @regionArea,\%tmpHash;
+		undef %regionAreaHash;
+
+	}
+	if ($flag == 2 or
+		$flag == 1)
+	{
+
+		my @tmpArray = @regionArea;
+		$regionCityHash{"areas"} = \@tmpArray;
+		$regionCityHash{"city"} = $region{"city"};
+		undef @regionArea;
+
+		my %tmpHash = %regionCityHash;
+		push @regionCity,\%tmpHash;
+		undef %regionCityHash;
+
+	}
+	if ($flag == 1) {
+
+		my @tmpArray = @regionCity;
+		$regionPrvcHash{"cities"} = \@tmpArray;
+		$regionPrvcHash{"province"} = $region{"province"};
+		undef @regionCity;
+
+		my %tmpHash = %regionPrvcHash;
+		push @object,\%tmpHash;
+		undef %regionPrvcHash;
+
+	}
+
+}
+
+#=====================
+#查找省、市、区的信息
+#=====================
+sub regionInfo {
+
+	my ($p,$c,$a) = @_;
+	my %regionHash;
+
+	$regionHash{"province"} = ${$regionsList{$p}}{"reg"};
+	$regionHash{"city"} = ${$regionsList{$c}}{"reg"};
+	$regionHash{"area"} = ${$regionsList{$a}}{"reg"};
+	$regionHash{"code"} = ${$regionsList{$a}}{"code"};
+
+	return \%regionHash;
+
+}

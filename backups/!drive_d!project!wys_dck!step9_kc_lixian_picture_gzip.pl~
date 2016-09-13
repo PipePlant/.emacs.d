@@ -9,8 +9,8 @@ use Cwd;
 use feature qw (say);
 # require "E:/eclipse_c++/common/step0_changeName.pl";
 
-my $dictName = "wys_dckxxfo";
-# my $dictName = "wys_dckxxft";
+# my $dictName = "wys_dckxxfo";
+my $dictName = "wys_dckxxft";
 # my $dictName = "wys_dckcz";
 # my $dictName = "wys_dckgz";
 

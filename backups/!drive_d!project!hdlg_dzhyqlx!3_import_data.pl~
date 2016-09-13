@@ -34,19 +34,22 @@ my @role_cnArray = ();
 my @tmpOther = ();
 
 my $sentenceFlag = 0;
+my $sentenceNum = 0;
 my $noteFlag = 0;
+my $noteLayerFlag = 0;
+my $noteImgCount = 0;
 while (<$IN>) {
     my $line = $_;
     my %item = %{$json->decode($line)};
 
     # ```chapter```
     if ($line =~ /imgC/) {
-        if (exists $subData{"note"}) {
+        if (@tmpOther) {
             InitVar(3);
             $subData{"note"} = \@tmpOther;
-            # $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
             $subData{"type"} = "w_d";
             say $TMP_DATA $json->encode(\%subData);
+            @tmpOther = ();
         }
         InitVar(1);      
         $chapterNum++;
@@ -82,10 +85,10 @@ while (<$IN>) {
             $unitData{"word"} = "延伸短语";
         } elsif ($item{"cName"} eq "회화") {
             $unitData{"word"} = "会话练习";
+            $sentenceNum = 0;
         } elsif ($item{"cName"} eq "실용표현") {
-            $unitData{"word"} = "实用表达"; 
-        } elsif ($item{"cName"} eq "단어") {
-            
+            $unitData{"word"} = "实用表达";
+            $noteLayerFlag = 1;
         }
         $unitData{"title"} = $item{"cName"};
         say $TMP_DATA $json->encode(\%unitData);
@@ -102,7 +105,12 @@ while (<$IN>) {
         $subNum++;
         $subData{"word"} = $item{"word"};
         $subData{"def"} = $item{"defW"};
-        $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+         if ($chapterNum == 22
+            and $unitNum == 1
+            and $subNum >= 8) {}
+        else {
+            $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        }
         $subData{"type"} = "w_c";
         next;
     }
@@ -116,6 +124,12 @@ while (<$IN>) {
         say $IMG_LOG $item{"imgW"}."\t".$img;
         if (@wordArray) {
             foreach my $tmpItem (@wordArray) {
+                if ($chapterNum == 22
+                    and $unitNum == 1
+                    and $subNum >= 8) {}
+                else {
+                    ${$tmpItem}{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+                }
                 ${$tmpItem}{"img"} = $item{"imgW"};
                 say $TMP_DATA $json->encode($tmpItem);
             }
@@ -161,7 +175,7 @@ while (<$IN>) {
     #```sentence```
     if ($line =~ /exp_title/) {
         InitVar(3);
-        $subData{"title"} = $item{"exp_title"};
+        $subData{"word"} = $item{"exp_title"};
         $subData{"type"} = "l_c";
         $sentenceFlag = 1;
         say $TMP_DATA $json->encode(\%subData);
@@ -170,13 +184,13 @@ while (<$IN>) {
     if ($line =~ /keyword/) {
         unless ($sentenceFlag) {
             InitVar(3);
-            $subData{"title"} = "";
+            $subData{"word"} = ++$sentenceNum;
             $subData{"type"} = "l_c";
             say $TMP_DATA $json->encode(\%subData);
             $sentenceFlag = 1;
         }
         InitVar(3);
-        $subData{"title"} = $item{"keyword"};
+        $subData{"word"} = $item{"keyword"};
         $subData{"type"} = "l_d";
         say $TMP_DATA $json->encode(\%subData);
         next;
@@ -197,22 +211,31 @@ while (<$IN>) {
 
     #```other```
     if ($line =~ /titleO_def/) {
+        if ($noteLayerFlag) {
+            InitVar(3);
+            $subData{"title"} = "Others";
+            $subData{"word"} = "补充知识";
+            $subData{"type"} = "l_b";
+            say $TMP_DATA $json->encode(\%subData);
+            $noteLayerFlag = 0;
+            $noteImgCount = 0;
+        }
         if (@tmpOther) {
             InitVar(3);
             $subData{"note"} = \@tmpOther;
-            # $subData{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
-            $subData{"type"} = "w_c";
+            $subData{"type"} = "w_d";
             say $TMP_DATA $json->encode(\%subData);
+            @tmpOther = ();
         }
         InitVar(3);
         $subData{"word"} = $item{"titleO_def"};
         $noteFlag = 1;
         next;
     }
-    if ($line =~ /titleO/) {
+    if ($line =~ /^titleO$/) {
         $subNum++;
         $subData{"title"} = $item{"titleO"};
-        $subData{"type"} = "l_b";
+        $subData{"type"} = "l_c";
         say $TMP_DATA $json->encode(\%subData);
         $noteFlag = 0;
         InitVar(3);
@@ -222,11 +245,31 @@ while (<$IN>) {
     if ($line =~ /((note)|(imgO))/) {
         if ($noteFlag) {
             $subData{"title"} = "";
-            $subData{"type"} = "l_b";
+            $subData{"type"} = "l_c";
             say $TMP_DATA $json->encode(\%subData);
             $noteFlag = 0;
         }
-        push @tmpOther,$item{$1};
+        my $dataType = $1;
+        if ($dataType eq "imgO") {
+            $item{$dataType} =~ /(\.\w+)/;
+            my $extension = $1;
+            $extension =~ s/\.jpeg/\.jpg/;
+            my $img = $chapterNum."_tips_".++$noteImgCount.$extension;
+            say $IMG_LOG $item{$dataType}."\t".$img;
+            $item{$dataType} = $img;
+        }
+        if ($item{$dataType} =~ /1 登机柜台/ or
+            $item{$dataType} =~ /2 查验护照/ or
+            $item{$dataType} =~ /3 安全检查/ or
+            $item{$dataType} =~ /4 进入登机口/ or
+            $item{$dataType} =~ /5 登机/) {
+            $item{$dataType} = "<h3>".$item{$dataType}."</h3>";
+        }
+        if ($dataType eq "imgO") {
+            push @tmpOther,{'image' => $item{$dataType}};
+        } else {
+            push @tmpOther,$item{$dataType}."<br>";
+        }
         next;
     }
 }
@@ -299,6 +342,16 @@ sub SenseData {
         $tmpVar{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
         $tmpVar{"type"} = "w_d";
         say $TMP_DATA $json->encode(\%tmpVar);
+        if ($tmpVar{"audio"} eq "40303.mp3") {
+            say $TMP_DATA $json->encode({"type" => "w_d", "tran" => "[은행에서]", "cont" => "〔在银行〕"});
+        } elsif ($tmpVar{"audio"} eq "50203.mp3") {
+            say $TMP_DATA $json->encode({"type" => "w_d", "tran" => "[잠시 후]", "cont" => "〔过了一会儿〕"});
+        } elsif ($tmpVar{"audio"} eq "50213.mp3") {
+            say $TMP_DATA $json->encode({"type" => "w_d", "tran" => "[20분 후]", "cont" => "〔20分钟后〕"});
+        } elsif ($tmpVar{"audio"} eq "90202.mp3") {
+            say $TMP_DATA $json->encode({"type" => "w_d", "tran" => "[5분후에]", "cont" => "〔五分钟后〕"});
+        }
+
     }
     InitVar(4);
 };

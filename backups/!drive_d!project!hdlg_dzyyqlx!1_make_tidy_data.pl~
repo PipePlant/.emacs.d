@@ -48,9 +48,18 @@ $buff =~ s/(star key\/button\t星号键)\n(display screen\t画面显示)/$2\n$1/
 $buff =~ s/(star key\/button\t星号键\npound key\/button\t井字键)\n(22_13.png)/$2\n$1/;
 $buff =~ s/(pound key\/button\t井字键)/$1\n22_zhanque.jpeg/;
 $buff =~ s/(========================================\n)(====================\n)/$1==============================\n\n==============================\n$2/g;
-$buff =~ s/(1_tips_10\.jpeg)\n(NOTE:登机牌)/$2\n$1/;
+$buff =~ s/(1_tips_9\.jpeg\n1_tips_10\.jpeg)\n(NOTE:登机牌)/$2\n$1/;
 $buff =~ s/(1_tips_11\.jpeg)\n(NOTE:航班出发时间表)/$2\n$1/;
 $buff =~ s/(1_tips_12\.png)\n(NOTE:美国签证\tAmerican VISA)/$2\n$1/;
+$buff =~ s/(NOTE:申根签证\tSchengen VISA)/$1\n1_tips_13.png/;
+$buff =~ s/(备注\n)1_tips_13.png\n/$1/;
+$buff =~ s/拍照 & 买相机/拍照＆买相机/;
+$buff =~ s/吗？ \（临时/吗？\（临时/;
+$buff =~ s/(这班车上有餐车吗？\n)/$1The dining car is in the seventh carriage.\n餐车在第七车厢。\n/g;
+$buff =~ s/TIPS\tCustoms Declaration[\s\S]+TIPS\tBorder Protection\n//g;
+$buff =~ s/(决定要买\n)/====================\n$1====================\n/;
+$buff =~ s/(询问付款)\n(地点\n)/====================\n$1$2====================\n/g;
+$buff =~ s/(Where is the cashier)/Where do I pay\?\n在哪里付账？\n$1/;
 
 say $OUT $buff;
 close $OUT;

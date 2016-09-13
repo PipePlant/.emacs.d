@@ -29,6 +29,7 @@ my @noteData = ();
 my $chapterNum = 0;
 my $unitNum = 0;
 my $subNum = 0;
+my $sentenceNum = 0;
 while (<$IN>) {
     chomp;
     my $line = $_;
@@ -74,6 +75,7 @@ while (<$IN>) {
         }elsif ($title eq "Useful Expressions") {
             $flag = 4;
             $word = "实用表达";
+            $sentenceNum = 0;
             if (@senseData and @senseCNData) {
                 PrintSense(\@senseData,\@senseCNData);
             }
@@ -135,12 +137,23 @@ while (<$IN>) {
             $item{"word"} = $1;
             $item{"def"} = $2;
             $item{"type"} = "w_c";
-            $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+            if ($chapterNum == 22
+                and $unitNum == 1
+                and $subNum >= 8) {}
+            else {
+                $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+            }
             next;
         }
         if ($line =~ /jpeg|png/) {
             if (@wordArray) {
                 foreach my $tmpItem (@wordArray) {
+                    if ($chapterNum == 22
+                        and $unitNum == 1
+                        and $subNum >= 8) {}
+                    else {
+                        ${$tmpItem}{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+                    }
                     ${$tmpItem}{"img"} = $line;
                     say $OUT $json->encode($tmpItem);
                     say $IMG_LOG " \t".$line;
@@ -161,7 +174,12 @@ while (<$IN>) {
         InitNum(3);
         $item{"phrase"} = $1;
         $item{"def"} = $2;
-        $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        if ($chapterNum == 7
+            and $unitNum == 2
+            and $subNum > 18) {}
+        else {
+            $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        }
         $item{"type"} = "w_c";
         say $OUT $json->encode(\%item);
         %item = ();
@@ -207,6 +225,9 @@ while (<$IN>) {
             next;
         }
         if ($stcFlag) {
+            if ($line eq "") {
+                $line = ++$sentenceNum;
+            }
             $item{"word"} = trim($line);
             $item{"type"} = "l_c";
             say $OUT $json->encode(\%item);
@@ -229,22 +250,21 @@ while (<$IN>) {
             %item = ();
             next;
         }else {
-            push @stcData,$line if $line !~ /=/;
+            push @stcData,$line if $line !~ /=|\.jpeg|\.jpg|\.png|TIPS/;
+            PrintSentence(\@stcData) if $line =~ /小急救箱。/;
         }
     }
 }
-
 close $IN;
 close $OUT;
 close $IMG_LOG;
 
 sub GetSenseData {
     my ($line,$data,$dataCN) = @_;
-
-    if ($line =~ /^[A-Za-z]/) {
+    if ($line =~ /\.(jpeg)|(png)/) {
+    } elsif ($line =~ /[^\x80-\xff]+$/) {
         push @{$data},$line;
-    }elsif ($line !~ /^\[/ or
-            $line =~ /jpeg|png/) {
+    } else {
         push @{$dataCN},$line;
     }
 };
@@ -252,19 +272,32 @@ sub GetSenseData {
 sub PrintSense {
     my ($data,$dataCN) = @_;
     my %senseItem = ();
+    my $senseFlag = 0;
 
-    foreach my $num (0 .. $#{$data}) {
-        if ($num % 2) {
+    for (my $i = 0; $i <= $#{$data}; $i++) {
+        if ($senseFlag) {
             InitNum(3);
-            $senseItem{"cont"} = ${$data}[$num];
-            $senseItem{"tran"} = ${$dataCN}[$num];
+            $senseItem{"cont"} = ${$data}[$i];
+            $senseItem{"tran"} = ${$dataCN}[$i];
             $senseItem{"type"} = "w_d";
             $senseItem{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
             say $OUT $json->encode(\%senseItem);
             %senseItem = ();
-        }else {
-            $senseItem{"role"} = ${$data}[$num];
-            $senseItem{"role_cn"} = ${$dataCN}[$num];
+            $senseFlag = 0;
+        } else {
+            if (${$data}[$i] =~ /\[/ and
+                ${$dataCN}[$i] =~ /\〔/) {
+                InitNum(3);
+                $senseItem{"cont"} = ${$data}[$i];
+                $senseItem{"tran"} = ${$dataCN}[$i];
+                $senseItem{"type"} = "w_d";
+                say $OUT $json->encode(\%senseItem);
+                $i++;
+                %senseItem = ();
+            }
+            $senseItem{"role"} = ${$data}[$i];
+            $senseItem{"role_cn"} = ${$dataCN}[$i];
+            $senseFlag = 1;
         }
     }
     @{$data} = ();

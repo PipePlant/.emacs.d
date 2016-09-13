@@ -278,6 +278,11 @@ sub example_getColor {
         $tarExample = $example;
         $tarExample =~ s/($word)/<color>$1<\/color>/g;
     }
+    elsif ($word eq "am") {
+
+        $tarExample = $example;
+        $tarExample =~ s/('m)/<color>$1<\/color>/ig;
+    }
 	elsif ($word eq "will") {
 
         $tarExample = $example;
@@ -696,12 +701,12 @@ sub get_questions {
             my $quesFlag = 1;
             if (!exists $checkHash{${$var}{"word"}} and
                 !exists $checkHash{${$var}{"def"}}){
-                my $tmpFullDef = $checkHash{${$var}{"def"}};
+                my $tmpFullDef = ${$var}{"def"};
                 my @tmpDefAry = ();
-
+                
                 while ($tmpFullDef =~ s/([\x80-\xff]+)//) {
                     my $tmpData = decode("utf8",$1);
-                    my $a = decode("utf8","；|，|！|？");
+                    my $a = decode("utf8","；|，|！|？|（|）|：");
                     $tmpData =~ s/$a/#/g;
                     foreach my $tmpDef (split /#/,encode("utf8",$tmpData)) {
                         if (exists $checkHash{$tmpDef}) {

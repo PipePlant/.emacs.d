@@ -1,0 +1,346 @@
+use strict;
+use Data::Dumper;
+use Digest::MD5 qw(md5 md5_hex md5_base64);
+use IO::Compress::Gzip qw(gzip $GzipError);
+use IO::Uncompress::Gunzip qw(gunzip);
+use warnings;
+use Encode;
+use JSON;
+use Time::HiRes qw ( time alarm sleep ) ;
+use File::Path;
+use feature qw (say);
+
+#require "E:/eclipse_c++/common/step0_changeName.pl";
+my $begin = time();
+
+#my $dtype    = dictName();
+my $dtype = "hdlg_dzyyqlx";
+my $root = "D:/project/$dtype/";
+my $read_dir = $root.$dtype."txt/";
+my $dict_dir = $root.$dtype."v209_packages/";
+my $cryptfile = "";
+
+##############################################
+#注意：
+#如果出现"Octal number > 037777777777 non-portable at"错误，可以忽略
+###############################################
+
+#-------------------
+our $a = 23691;
+our $b = 16430;
+our $c = 24729;
+my $SequenceLength = 9041;
+
+#--------------------------#
+#删除非空文件夹
+rmtree $dict_dir if ( -e $dict_dir );
+mkdir $dict_dir ;
+opendir DIRIN, $read_dir or die $!;
+foreach my $f ( readdir(DIRIN) )
+{	
+	if ( my ($type) = ( $f =~ m/^(.*)\.txt/ ) )
+	{
+		v209_pack( $type, $dtype );
+	}
+}
+closedir DIRIN;
+print "finished!!!\n";
+
+sub v209_pack
+{
+	my ( $type, $dtype ) = @_;
+
+	if ( $type =~ m/(kca\d+_kcb\d+_kcc\d+)/ ){
+#		print $type. "\t" . $1 . "\n";
+		$cryptfile = $dict_dir.$dtype . "-kc_" . $1 . ".dict";
+	}elsif ( $type =~ m/(kca\d+_kcb\d+)$/ ){
+		$cryptfile = $dict_dir.$dtype."-kc_" . $1 . ".dict";
+	}else{
+		$type =~ m/(kca\d+)/;
+#		print "<---------------------------->\n";
+		$cryptfile = $dict_dir . $dtype."-kc_" . $1 . ".dict";
+	}
+	my $txtfile = $read_dir.$type .".txt";
+	my $dzip_encrypt_key = "oXlz0ubviNh1b1AExMa9zFKTIpKO1NFG";
+	my %paramHash;
+	${ $paramHash{0} }{a} = 13;
+	${ $paramHash{0} }{b} = 35;
+	${ $paramHash{0} }{c} = 784394;
+
+	${ $paramHash{1} }{a} = 11;
+	${ $paramHash{1} }{b} = 28;
+	${ $paramHash{1} }{c} = 748349;
+
+	${ $paramHash{2} }{a} = 19;
+	${ $paramHash{2} }{b} = 21;
+	${ $paramHash{2} }{c} = 649539;
+
+	${ $paramHash{3} }{a} = 12;
+	${ $paramHash{3} }{b} = 32;
+	${ $paramHash{3} }{c} = 774334;
+
+	${ $paramHash{4} }{a} = 13;
+	${ $paramHash{4} }{b} = 29;
+	${ $paramHash{4} }{c} = 726321;
+
+	${ $paramHash{5} }{a} = 18;
+	${ $paramHash{5} }{b} = 23;
+	${ $paramHash{5} }{c} = 675902;
+
+	${ $paramHash{6} }{a} = 17;
+	${ $paramHash{6} }{b} = 26;
+	${ $paramHash{6} }{c} = 686136;
+
+	${ $paramHash{7} }{a} = 14;
+	${ $paramHash{7} }{b} = 27;
+	${ $paramHash{7} }{c} = 634576;
+
+	my $version = 209;
+	print "reading data from $txtfile \n";
+	open IN, "<" , $txtfile or die $!;
+	my $nIndex = 0;
+	my $outStr = "";
+	while (<IN>)
+	{
+		chomp;
+		if (/^([^\t]+)\t([^\t]+)\t(.*?)\t(.*?)\s*$/)
+		{
+			my $uwid = $1;
+			my $ver  = $2;
+			my $key  = $3;
+			my $val  = $4;
+
+			my $compressFlag = 0;
+			my $keyLength    = length($key);
+			my $tmp = 0;
+			my $tstr = md5_hex( $val . 'mYkEYs' );
+			if ( $tstr =~ /^([0-7]+?)[^0-7]/)
+			{#由于MD5是字母和数字混合，且开头不是0x,0b,而oct()函数只能识别0x,0b开头，或者0-7的数字
+				$tmp = $1;
+#				print $tmp."\n-----";
+				#八进制最大037777777777，有待优化
+#				if($tstr =~ /704232033507/){print $tstr."\n";exit;};
+			}
+			my $dec = oct( $tmp ) % 8;
+			my $data =
+			  dzip_crypt3( $val, $uwid, ( length($val) > 1024 ) ? 1 : 0, $paramHash{$dec} );
+			my $dataLength = length($data) + 1;
+
+			# key length 2 bytes;
+			$outStr .= chr( ( $keyLength >> 8 ) & 255 ) . chr( $keyLength & 255 );
+
+			# data length 3 bytes;
+			$outStr .=
+			    chr( ( $dataLength >> 16 ) & 255 )
+			  . chr( ( $dataLength >> 8 ) & 255 )
+			  . chr( $dataLength & 255 );
+
+			# uwid 4 bytes;
+			$outStr .=
+			    chr( ( $uwid >> 24 ) & 255 )
+			  . chr( ( $uwid >> 16 ) & 255 )
+			  . chr( ( $uwid >> 8 ) & 255 )
+			  . chr( $uwid & 255 );
+
+			# version 4 bytes;
+			if ( $ver =~ m/^\d+$/ and length($ver) > 4 )
+			{
+				$outStr .=
+				    chr( ( $ver >> 24 ) & 255 )
+				  . chr( ( $ver >> 16 ) & 255 )
+				  . chr( ( $ver >> 8 ) & 255 )
+				  . chr( $ver & 255 );
+			}
+			else
+			{
+				$outStr .= $ver;
+			}
+
+			# key;
+			$outStr .= $key;
+
+			# crypt3 parameter group flag 1 byte
+			$outStr .= chr( ( $dec + 23 ) & 255 );
+			# data
+			$outStr .= $data;
+			$outStr .= "DICT";
+			$nIndex++;
+
+			#last;
+		}
+	}
+	close IN;
+
+	srand( time ^ $$ );
+	srand( int( rand(100000000) ) + time );
+	my $Aseed = int( rand(2000000000) );
+	print "Aseed = $Aseed, nIndex = $nIndex, version = $version\n";
+
+	my $sA             = $Aseed;
+	my $randomSequence = "";
+
+	for ( my $i = 0 ; $i < $SequenceLength ; $i++ )
+	{
+		$sA = ( $a * ( $sA & 65535 ) + $b ) % ( $c + $i );
+		$randomSequence .= chr( $sA & 255 );
+	}
+
+	my $crypticalStr      = "";
+	my $uncrypticalStrLen = length($outStr);
+	my @randomSequence    = split( //, $randomSequence );
+	my @crc               = ( 0, 0, 0, 0, 0, 0, 0, 0 );
+	my $char              = 0;
+	my $tmp               = 0;
+	my $i                 = 0;
+	open IN, "<", \$outStr;
+	binmode(IN);
+
+	while (1)
+	{
+		my $buff;
+		read( IN, $buff, $SequenceLength );
+		my $tmpCryptialStr;
+		if ( length($buff) < $SequenceLength )
+		{
+			my $tmpRand = substr( $randomSequence, 0, length($buff) );
+			$tmpCryptialStr = ( $buff ^ $tmpRand );
+
+		}
+		else
+		{
+			$tmpCryptialStr = ( $buff ^ $randomSequence );
+		}
+		$crypticalStr .= $tmpCryptialStr;
+
+		my @arr = split( //, $tmpCryptialStr );
+		foreach my $t (@arr)
+		{
+			$crc[ $i++ % 8 ] ^= ord($t);
+		}
+		last if ( length($buff) < $SequenceLength );
+	}
+
+	$nIndex ^=
+	  ( ( $crc[2] & 255 ) << 24 ) +
+	  ( ( $crc[1] & 255 ) << 16 ) +
+	  ( ( $crc[7] & 255 ) << 8 ) +
+	  ( $crc[4] & 255 );
+
+	my $head = "";
+	$head .= chr( $version & 255 );
+	$head .=
+	    chr( ( $nIndex >> 24 ) & 255 )
+	  . chr( ( $nIndex >> 16 ) & 255 )
+	  . chr( ( $nIndex >> 8 ) & 255 )
+	  . chr( ($nIndex) & 255 );
+	$head .=
+	    chr( ( $Aseed >> 24 ) & 255 )
+	  . chr( ( $Aseed >> 16 ) & 255 )
+	  . chr( ( $Aseed >> 8 ) & 255 )
+	  . chr( ($Aseed) & 255 );
+	foreach my $c (@crc)
+	{
+		$head .= chr( $c & 255 );
+	}
+
+	my $allOut = $head . $crypticalStr;
+	print "writing data to $cryptfile \n...........................................\n";
+	open OUT, ">" . $cryptfile or die $!;
+	binmode(OUT);
+	print OUT $allOut;
+	close OUT;
+}
+
+sub dzip_crypt3
+{
+	my ( $str, $key, $is_gzip, $pHash, $is_length, $is_crc ) = @_;
+	$key       = 'dic' . $key;
+	$is_gzip   = 0 unless ( defined($is_gzip) );
+	$is_length = 1 unless ( defined($is_length) );
+	$is_crc    = 2 unless ( defined($is_crc) );
+
+	my $a = ${$pHash}{a};
+	my $b = ${$pHash}{b};
+	my $c = ${$pHash}{c};
+
+	my @key = split( //, $key );
+	return "" if ( $key[0] ne 'd' && $key[1] ne 'i' && $key[2] ne 'c' );
+	my $seed1 = int( rand(65535) );
+	my $seed2 = int( rand(65535) );
+
+	# print "seed1 = ".$seed1."\tseed2 = ".$seed2."\n";
+
+	return "" if ( length($key) < 5 );
+
+	while ( ( $seed1 >> 8 ) & 255 == 255 )
+	{
+		$seed1 = int( rand(65535) );
+	}
+
+	my $head = '';
+	$head .=
+	    chr( ( $seed1 >> 8 ) & 255 )
+	  . chr( $seed1 & 255 )
+	  . chr( ( $seed2 >> 8 ) & 255 )
+	  . chr( $seed2 & 255 );
+	$head .= chr(
+		(
+			( ( $is_gzip ? ( 1 << 7 ) : 0 ) | ( $is_length ? ( 1 << 6 ) : 0 ) | ( $is_crc << 4 ) )
+			^ $seed1 ^ $seed2
+		) & 255
+	);
+
+	my $databuff;
+	if ($is_gzip)
+	{
+		gzip \$str => \$databuff;
+	}
+	else
+	{
+		$databuff = $str;
+	}
+
+	my $leng = length($databuff);
+	if ($is_length)
+	{
+		$seed1 = ( $a * $seed1 + $b + $seed2 + ord( $key[3] ) ) % $c;
+		$seed2 = ( $b * $seed2 + $a + $seed1 + ord( $key[4] ) ) % $c;
+
+		my $leng1 = ( $seed1 ^ ( $leng >> 16 ) );
+		my $leng2 = ( $seed2 ^ $leng ) & 65535;
+		$head .=
+		    chr( ( $leng1 >> 8 ) & 255 )
+		  . chr( ($leng1) & 255 )
+		  . chr( ( $leng2 >> 8 ) & 255 )
+		  . chr( $leng2 & 255 );
+	}
+
+	my $key_leng = length($key);
+	my $result   = '';
+	my @crc      = ( 0, 0, 0, 0, 0, 0 );
+	my $ch       = 0;
+	my @str      = split( //, $databuff );
+	for ( my $i = 0 ; $i < length($databuff) ; $i++ )
+	{
+		$seed1 = ( $a * $seed1 + $b + $seed2 + ord( $key[ $i % $key_leng ] ) + $ch ) % $c;
+		$seed2 = ( $b * $seed2 + $a + $seed1 + ord( $key[ $i % $key_leng ] ) ) % $c;
+		$ch    = ord( $str[$i] );
+		$result .= chr( ( $seed1 ^ $seed2 ^ $ch ) & 255 );
+		my $tmp = ( $seed1 ^ $seed2 ^ $ch ) & 255;
+
+		#print "i=$i;\tseed1=$seed1;\tseed2=$seed2;\torg=$ch\tcrypt=$tmp\n";
+		if ($is_crc)
+		{
+			$crc[ $i % ( 2 * $is_crc ) ] = $ch ^ $crc[ $i % ( 2 * $is_crc ) ];
+		}
+	}
+
+	for ( my $i = 0 ; $i < ( 2 * $is_crc ) ; $i++ )
+	{
+		$head .= chr( $crc[$i] & 255 );
+	}
+
+	#$databuff = join("",@str);
+
+	return $head . $result;
+}

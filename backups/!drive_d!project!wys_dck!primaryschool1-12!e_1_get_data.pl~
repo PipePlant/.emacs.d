@@ -52,7 +52,6 @@ foreach my $file (@dataFile) {
             my $examID = 0;
             if ($flag) {                
                 $examID = ($dtypeID << 16) | ($book << 12) | ($module << 8) | ($typeNum[$type] << 3) | $type;
-                # say $module."\t".$typeNum[$type]."\t".$type;
             }
             else {            
                 $examID = ($dtypeID << 16) | ($book-1 << 12) | ($module-1 << 8) | ($typeNum[$type]-1 << 3) | $type;
@@ -79,11 +78,11 @@ sub GetExamData {
 
     # ``````基础题库``````
     my @jichuKey = ($module);
-    
+
     # ~~~只含有基础题库~~~
     if ($module == 1) {        
         foreach my $times (1 .. 13) {
-            push @examData,@{CreatExam(\@jichuKey,$details)};
+            push @examData,@{CreatExam(\@jichuKey,$details,$module)};
         }
         
         say "[end]Book $book Module $module";
@@ -92,16 +91,16 @@ sub GetExamData {
     }
     elsif ($module == 2 or $module == 3) {        
         foreach my $times (1 .. 3) {
-            push @examData,@{CreatExam(\@jichuKey,$details)};
+            push @examData,@{CreatExam(\@jichuKey,$details,$module)};
         }
         
         my @beixuanKey = ($moduleKey[-1],$moduleKey[-2]);
         foreach my $times (1 .. 3) {
-            push @examData,@{CreatExam(\@beixuanKey,$details)};
+            push @examData,@{CreatExam(\@beixuanKey,$details,$module)};
         }
 
         foreach my $times (1 .. 7) {
-            push @examData,@{CreatExam(\@moduleKey,$details)};
+            push @examData,@{CreatExam(\@moduleKey,$details,$module)};
         }
 
         say "[end]Book $book Module $module";
@@ -109,15 +108,14 @@ sub GetExamData {
     }
     else {
 
-        push @examData,@{CreatExam(\@jichuKey,$details)};
-        
+        push @examData,@{CreatExam(\@jichuKey,$details,$module)};
         my @beixuanKey = ($moduleKey[-1],$moduleKey[-2]);
         foreach my $times (1 .. 2) {
-            push @examData,@{CreatExam(\@beixuanKey,$details)};
+            push @examData,@{CreatExam(\@beixuanKey,$details,$module)};
         }
 
         foreach my $times (1 .. 10) {
-            push @examData,@{CreatExam(\@moduleKey,$details)};
+            push @examData,@{CreatExam(\@moduleKey,$details,$module)};
         }
 
         say "[end]Book $book Module $module";
@@ -126,31 +124,56 @@ sub GetExamData {
 };
 
 sub CreatExam {
-    my ($moduleKey,$details) = @_;    
+    my ($moduleKey,$details,$module) = @_;
+    $module //= 0;
     my @source = ();
-    map {push @source,@{${$details}{$_}};} @{$moduleKey};
     my @target = ();
+    my @moduleWords = @{${$details}{${$moduleKey}[-1]}};
+    if (@{$moduleKey} > 5) {
+        map {push @source,@{${$details}{$_}};} (@{$moduleKey})[-5 .. -1];
+    } else {
+        map {push @source,@{${$details}{$_}};} @{$moduleKey};
+    }
 
     # 单词不够8个，只取全能题
-    if (scalar @source < 8) {
+    if (scalar @source < 8
+        and $module == 1) {
+        my @randList = shuffle @source;
+        push @target,MakeExamAllType(\@randList,"less");
+    } elsif (scalar @source < 8
+        and $module != 1) {
 
-        # foreach my $time (1 .. 5) {
-            my @randList = shuffle @source;
-            push @target,MakeExamAllType(\@randList,"less");
-        # }
-    }
-    else {
-
+    } else {
         my @randList = ();
-
+        my @tmpRandList = ();
         # ```音、形、意、表达```
         foreach my $type (1,2,7,6) {
-            @randList = (shuffle @source)[0 .. 7];
+            if (@moduleWords <= 6) {
+                @tmpRandList = shuffle @moduleWords;
+            } else {
+                @tmpRandList = (shuffle @moduleWords)[0 .. 5];
+            }
+            foreach my $times (0 .. 7-@tmpRandList) {
+                my $tmpWord = shuffle @source;
+                redo if $tmpWord ~~ @tmpRandList;
+                push @tmpRandList,$tmpWord;
+            }
+            @randList = shuffle @tmpRandList;
             push @target,MakeExamFourType(\@randList,$type);
         }
 
         # ```全能```
-        @randList = (shuffle @source)[0 .. 7];
+        if (@moduleWords <= 6) {
+            @tmpRandList = shuffle @moduleWords;
+        } else {
+            @tmpRandList = (shuffle @moduleWords)[0 .. 5];
+        }
+        foreach my $times (0 .. 7-@tmpRandList) {
+            my $tmpWord = shuffle @source;
+            redo if $tmpWord ~~ @tmpRandList;
+            push @tmpRandList,$tmpWord;
+        }
+        @randList = shuffle @tmpRandList;
         push @target,MakeExamAllType(\@randList,"normal");
     }
 

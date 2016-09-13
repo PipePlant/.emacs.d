@@ -34,10 +34,13 @@ my %indexWord = (
 my @index = (0,0,0,0,0);
 my $detailsStart = 0;
 my %fullStrHash = ();
+my %uwidKeyList = ();
+
 my @strData = ({"id"=>"kc"});
 
 while (<$IN>) {
     my $line = $_;
+    $line =~ s/\.jpeg/\.jpg/g;
     my %item = %{$json->decode($line)};
 
     if ($item{"type"} =~ /w_(\w)/) {
@@ -50,6 +53,7 @@ while (<$IN>) {
         my $uwid = ${$obj}{"uwid"};
         ${$obj}{"key"} =~ /(.*)_.+?$/;
         my $parent_id = $1;
+        push @{$uwidKeyList{$parent_id}},$uwid;
         if ($fullStrHash{$parent_id} eq "layer") {
             $fullStrHash{$parent_id} = 1;
         }else {
@@ -167,30 +171,27 @@ sub StructFile {
         $des{"id"} = $id;
         $des{"word"} = ${$obj}{"word"} if exists ${$obj}{"word"};
         $des{"title"} = ${$obj}{"title"} if exists ${$obj}{"title"};
-        my $fullId = "kc_kca01_kcb03";
-        # foreach my $fullId (@fullStrKey) {
-            if (($fullId =~ /^$id/) and
-                   (${$fullStrHash}{$fullId} ne "layer")) {
+
+        foreach my $fullId (@fullStrKey) {
+            if ($fullId =~ /^$id/ and
+                ${$fullStrHash}{$fullId} ne "layer") {
                 $des{"progressnum"} += ${$fullStrHash}{$fullId};
-            }
-            elsif ($fullId =~ /^\Q$id\E_[0-9a-zA-Z]+$/) {
-                $des{"childrennum"}++;
-                if ($id eq "kc_kca01") {
-                    say $DES "==>$fullId";
-                    say $DES "$id";
+                if ($fullId eq $id) {
+                    push @{$str{"sub_uwid"}},@{$uwidKeyList{$fullId}};
                 }
-
-                # if (${$fullStrHash}{$fullId} eq "layer") {
-                #     push @{$str{"sub_id"}},$fullId;
-                # }else {
-                #     push @{$str{"sub_uwid"}},$fullId;
-                # }
             }
-            
-        # }
-      
-
+            if ($fullId =~ /^\Q$id\E_[0-9a-zA-Z]+$/) {
+                $des{"childrennum"}++;
+                if ($id eq "kc" or 
+                    ${$fullStrHash}{$id} eq "layer") {
+                    push @{$str{"sub_id"}},$fullId;
+                }else {
+                    push @{$str{"sub_uwid"}},$fullId;
+                }
+            }
+        }
+        @{$str{"sub_id"}} = sort {$a cmp $b} @{$str{"sub_id"}} if exists $str{"sub_id"};
         say $STR $id."\t".$json->encode(\%str);
-        # say $DES $id."\t".$json->encode(\%des);
+        say $DES $id."\t".$json->encode(\%des);
     }
 };

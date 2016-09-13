@@ -29,6 +29,10 @@
 (require 'init-ace-window)
 ;; ````````` ace-jump-mode `````````
 (require 'init-ace-jump-mode)
+;; ````````` multiple-cursors `````````
+(require 'init-multiple-cursors)
+;; ````````` neotree `````````
+(require 'init-neotree)
 
 ;; ````````` cperl-mode `````````
 (require 'init-cperl-mode)
@@ -40,7 +44,7 @@
 (require 'init-org-mode)
 ;; ````````` nginx-mode `````````
 (require 'init-nginx-mode)
- ; (require 'nginx-mode)
+
 ;; ````````` auto-save `````````
 (custom-set-variables
  ;; custom-set-variables was added by Custom.

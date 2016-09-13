@@ -20,7 +20,7 @@ my $lineNum;
 
 while (<$IN>) {
     chomp;
-    push(@in,$_);
+    push(@in,FixTextError($_));
 }
 
 close $IN;
@@ -454,3 +454,11 @@ for (my $var = 0; $var <= $lineNum-1; $var++) {
 
 close $TS;
 close $OUT;
+
+sub FixTextError {
+    my $data = shift;
+
+    $data =~ s/®//g;
+    
+    return $data;
+};

@@ -11,9 +11,12 @@ use feature qw(say);
 #查找源文件列表
 sub get_file_list {
     my $dir = $File::Find::name;
+    
     unless (-d $dir) {
-        print FL "$dir\n"
-            if $dir =~ /\.xml$/;
+        if ($dir =~ /\.xml$/
+            and $dir !~ / \- /) { 
+            print FL "$dir\n";
+        }
     }
 }
 
@@ -34,7 +37,20 @@ sub get_data_sh {
 
         $line =~ s/^\s+//g;
         $line =~ s/( +)$|(\t+)$//g;
+        $line =~ s/640BC\?##151;546BC\?/640BC\?-546BC\?/;
+        $line =~ s/640 BC\?##151;546 BC\?/640 BC\?-546 BC\?/;
+        $line =~ s/(&|#)#163;/£/g;
+        $line =~ s/##160;/,/g;
+        $line =~ s/##38;/&/g;
+        $line =~ s/##176;/°/g;
+        $line =~ s/##183;//g;
         $line =~ s/##233;/é/g;
+        $line =~ s/##8211;/–/g;
+        $line =~ s/##8722;/−/g;
+        $line =~ s/##151;/ /g;
+        $line =~ s/<br\/>/<br>/g;
+        $line =~ s/<!--img.+?-->//g;
+        $line =~ s/ {2,}/ /g;
 
         if ($line =~ /^<p>/) {
             if ($line =~ /<\/p>$/) {
@@ -72,7 +88,6 @@ sub get_data_sh {
 
     my $word = "";
     foreach my $line (@processedData) {
-
         # ===========_word_============
         if ($line =~ /<li id="entry">(.*)<\/li>/) {
             my $tmpValue = $1;
@@ -83,138 +98,155 @@ sub get_data_sh {
             $tmpValue =~ s/\// \/ /g;
             $tmpValue =~ s/ {2,}/ /g;
             $tmpValue =~ s/##183;/ /g;
+            
             $word = $tmpValue;
             $body{"word"} = $tmpValue;
         }
         # ===========_pron_============
-        # if ($line =~ /<li id="pronunciation_br" src="pronunciation\/(.*)"\/>/) {
-        #     my $tmpValue = $1;
-        #     ${$body{"pron"}}{"v"} = 4;
-        #     ${$body{"pron"}}{"lang"} = "b";
-        #     ${$body{"pron"}}{"aw"} = $tmpValue;
-        # }
-            ${$body{"pron"}}{"v"} = 4;
-            ${$body{"pron"}}{"lang"} = "b";
-            $fileName =~ s/(.*).xml/$1/;
-            $fileName =~ s/-M\d+//g;
-            $fileName =~ s/ |\n//g;
-            ${$body{"pron"}}{"aw"} = lc ($fileName.".mp3");
+        ${$body{"pron"}}{"v"} = 4;
+        ${$body{"pron"}}{"lang"} = "b";
+        $fileName =~ s/(.*).xml/$1/;
+        $fileName =~ s/-M\d+//g;
+        $fileName =~ s/ |\n//g;
+        ${$body{"pron"}}{"aw"} = lc ($fileName.".mp3");
+        # ===========_def_============
+        if ($line =~ /<p>(.+?)<\/p>/) {
+            my $defData = $1;
+            $defData =~ s/<i><\/i>//g;
+            my $pos = "";
+            my $eng = "";
+            if ($defData =~ /(<i>.+?<\/i>) (.*)/) {
+                $pos = $1;
+                $eng = $2;
+                $eng =~ s/<span class="ipa">.+?<\/span>//g;
+                $eng =~ s/<span class="glossterms">(.+?)<\/span>/<glossterms>$1<\/glossterms>/g;
+                $eng =~ s/^\s+//g;
+                push @{$body{"paraphrase"}},{"pos" => $pos, "eng" => $eng};
+            } else {
+                $eng = $defData;
+                $eng =~ s/<span class="ipa">.+?<\/span>//g;
+                $eng =~ s/<span class="glossterms">(.+?)<\/span>/<glossterms>$1<\/glossterms>/g;
+                $eng =~ s/^\s+//g;
+                push @{$body{"paraphrase"}},{"eng" => $eng};
+            }
+        }
+        # ===========_example_============
+        if ($line =~ /<li>(.+?)<\/li>/) {
+            my $example = example_getColor($1,$body{"word"},$proWord);
+            $example =~ s/^\s+//g;
+            push @{$body{"example"}},$example;
+        }
         # ===========_symbol_============
         # if ($line =~ /<li class="ipa">\/(.*)\/<\/li>/) {
         #     my $tmpValue = $1;
         #     $body{"symbol"} = $tmpValue;
         # }
         # ===========_sense and def_============
-        my $data = "";
-        if ($line =~ /^\t*(<p>)?(.+?)<\/p>/) {
+        # ~~~
+        # my $data = "";
+        # if ($line =~ /^\t*(<p>)?(.+?)<\/p>/) {
 
-            $data = $2;
-        }
+        #     $data = $2;
+        # }
 
-        my $tmpValue1 = "";
-        my $tmpValue2 = "";
+        # my $tmpValue1 = "";
+        # my $tmpValue2 = "";
 
-        if ($data =~ /<i>(.*?)<\/i>(.*)/) {
+        # if ($data =~ /<i>(.*?)<\/i>(.*)/) {
 
-            $tmpValue1 = $1;
-            $tmpValue2 = $2;
+        #     $tmpValue1 = $1;
+        #     $tmpValue2 = $2;
             
-            $tmpValue1 =~ s/come straight to the point//g;
-        }
-        elsif ($data =~ /<i><\/i>(.*)/) {
+        #     $tmpValue1 =~ s/come straight to the point//g;
+        # }
+        # elsif ($data =~ /<i><\/i>(.*)/) {
 
-            $tmpValue2 = $1;
-        }
-        else {
+        #     $tmpValue2 = $1;
+        # }
+        # else {
 
-            $data =~ s/<.+?>//g;
-            $tmpValue2 = $data;
-        }
+        #     $data =~ s/<.+?>//g;
+        #     $tmpValue2 = $data;
+        # }
 
-        $tmpValue2 =~ s/^\s+//g;
-        $tmpValue2 =~ s/<.*?>//g;
-        $tmpValue2 =~ s/\t//g;
-        $tmpValue2 =~ s/\n//g;
-        $tmpValue2 =~ s/\/.+?\///g;
-        $tmpValue2 =~ s/(\^)|(\+)//g;
-        $tmpValue2 =~ s/^\s+|\s+$//g;
-        $tmpValue2 =~ s/##233;/é/g;
-        $tmpValue2 =~ s/##38;/&/g;
+        # $tmpValue2 =~ s/^\s+//g;
+        # $tmpValue2 =~ s/<.*?>//g;
+        # $tmpValue2 =~ s/\t//g;
+        # $tmpValue2 =~ s/\n//g;
+        # $tmpValue2 =~ s/\/.+?\///g;
+        # $tmpValue2 =~ s/(\^)|(\+)//g;
+        # $tmpValue2 =~ s/^\s+|\s+$//g;
+        # $tmpValue2 =~ s/##233;/é/g;
+        # $tmpValue2 =~ s/##38;/&/g;
 
-        if ($tmpValue2 ne "") {
-
-            my %tmpHash;
-            $tmpHash{"pos"} = $tmpValue1 if $tmpValue1 ne "";
-            $tmpHash{"eng"} = $tmpValue2;
-            push(@{$body{"paraphrase"}},\%tmpHash);
-        }
+        # if ($tmpValue2 ne "") {
+        #     my %tmpHash;
+        #     if ($tmpValue1 ne "") {
+        #         $tmpValue1 =~ s/,/ /;
+        #         $tmpHash{"pos"} = $tmpValue1;
+        #     }
+        #     $tmpValue2 =~ s/(\w)( \(\d+\))/$1;$2/g;
+        #     $tmpValue2 =~ s/;$//g;
+        #     $tmpHash{"eng"} = $tmpValue2;
+        #     push(@{$body{"paraphrase"}},\%tmpHash);
+        # }
+        # ~~~
 
         # ===========_example and paraphrase and info_============
-        $type = 1
-            if $line =~ /<ul id="entry_examples">/;
-        $type = 2
-            if $line =~ /<ul id="collocations">/;
-        $type = 3
-            if $line =~ /<ul id="related_info">/;
+        # ~~~
+        # $type = 1
+        #     if $line =~ /<ul id="entry_examples">/;
+        # $type = 2
+        #     if $line =~ /<ul id="collocations">/;
+        # $type = 3
+        #     if $line =~ /<ul id="related_info">/;
 
-        if ($line =~ /<li>(.*)<\/li>/) {
-            unless ($1 eq "(No information.)" or
-                    $1 eq "(No examples.)" or
-                    $1 eq "(No examples)") {
+        # if ($line =~ /<li>(.*)<\/li>/) {
+        #     unless ($1 eq "(No information.)" or
+        #             $1 eq "(No examples.)" or
+        #             $1 eq "(No examples)") {
 
-                my $tmpValue = $1;
-                $tmpValue =~ s/640 ?BC\?##151;546 ?BC\?/640 BC\.-546 BC\./g;
-                $tmpValue =~ s/##151;/\-/g;
-                while ($tmpValue =~ /(##(\d+);)/g) {
+        #         my $tmpValue = $1;
+        #         $tmpValue =~ s/640 ?BC\?##151;546 ?BC\?/640 BC\.-546 BC\./g;
+        #         $tmpValue =~ s/##151;/\-/g;
+        #         while ($tmpValue =~ /(##(\d+);)/g) {
 
-                    my $dNum = $2;
-                    my $htmlVar = $1;
-                    my $utf8Var = encode("utf-8",chr(hex("0x".sprintf("%X",$dNum))));
-                    $tmpValue =~ s/$htmlVar/$utf8Var/g;
-                }
-                $tmpValue =~ s/<.+?>//g;
-                $tmpValue =~ s/\xA1\xEA/￡/g;
-                $tmpValue =~ s/^\s+|\s+$//g;
+        #             my $dNum = $2;
+        #             my $htmlVar = $1;
+        #             my $utf8Var = encode("utf-8",chr(hex("0x".sprintf("%X",$dNum))));
+        #             $tmpValue =~ s/$htmlVar/$utf8Var/g;
+        #         }
+        #         $tmpValue =~ s/<.+?>//g;
+        #         $tmpValue =~ s/\xA1\xEA/￡/g;
+        #         $tmpValue =~ s/^\s+|\s+$//g;
 
-                push(@tmpArray,$tmpValue);
-            }
-        }
-
-        if ($line =~ /<\/ul>/) {
-            $type = 0 if @tmpArray == 0;
-
-            if ($type == 1) {
-
-                @{$body{"example"}} = map {example_getColor($_,$body{"word"},$proWord)} @tmpArray
-            }
-            elsif ($type == 2) {
-
-                foreach my $var (@tmpArray) {
-
-                    my %tmpHash;
-                    $tmpHash{"word"} = $var;
-                    push (@{$body{"phrase"}},\%tmpHash);
-                }
-            }
-            elsif ($type == 3) {
-
-                @{$body{"info"}} = @tmpArray;
-            }
-
-            $type = 0;
-            undef @tmpArray;
-        }
-        # ===========_img_============
-        # if ($line =~ /<img src="pics\/(.*)"\/>/) {
-        #     my $tmpValue = $1;
-        #     $body{"img"} = lc $tmpValue;
+        #         push(@tmpArray,$tmpValue);
+        #     }
         # }
 
-        # ===========_index_============
-        # if ($line =~ /<li id="where_to_find">(.*)<\/li>/) {
-        #     my $tmpValue = $1;
-        #     $body{"index"} = $tmpValue;
+        # if ($line =~ /<\/ul>/) {
+        #     $type = 0 if @tmpArray == 0;
+
+        #     if ($type == 1) {
+
+        #         @{$body{"example"}} = map {example_getColor($_,$body{"word"},$proWord)} @tmpArray
+        #     }
+        #     elsif ($type == 2) {
+
+        #         foreach my $var (@tmpArray) {
+        #             my %tmpHash;
+        #             $tmpHash{"word"} = $var;
+        #             push (@{$body{"phrase"}},\%tmpHash);
+        #         }
+        #     }
+        #     elsif ($type == 3) {
+        #         @{$body{"info"}} = @tmpArray;
+        #     }
+
+        #     $type = 0;
+        #     undef @tmpArray;
         # }
+        # ~~~
     }
     return %body;
 }
@@ -258,11 +290,13 @@ sub example_getColor {
         $tarExample =~ s/(wasn't in the mood to hear of such things)/<color>$1<\/color>/g;
         $tarExample =~ s/(feeling in the mood to take it easy)/<color>$1<\/color>/g; 
     }
-    elsif ($word eq "(be) true of / for") {
+    elsif ($word eq "(be) true of   for") {
 
         $tarExample = $example;
-        if ($tarExample =~ s/(in the mood for)/<color>$1<\/color>/g) {}
-        elsif ($tarExample =~ s/(in the mood to)/<color>$1<\/color>/g) {}
+        if ($tarExample =~ s/(is true of)/<color>$1<\/color>/g) {}
+        else {
+            $tarExample =~ s/('s)/<color>$1<\/color>/g;
+            $tarExample =~ s/(true of)/<color>$1<\/color>/g;}
     }
     elsif ($word eq "at the edge of" or 
            $word eq "at the very beginning of" or 
@@ -680,7 +714,7 @@ sub example_getColor {
 
         $tarExample = $example;
         $tarExample =~ s/(had)( great )(difficulty in pretending to be amused by the letter)/<color>$1<\/color>$2<color>$3<\/color>/ig;
-        $tarExample =~ s/(had)( no difficulty )(in arranging to stay at Ferndean that night)/<color>$1<\/color>$2<color>$3<\/color>/ig;
+        $tarExample =~ s/(had)( no )(difficulty in arranging to stay at Ferndean that night)/<color>$1<\/color>$2<color>$3<\/color>/ig;
         $tarExample =~ s/(had difficulty in believing that a man who lived by buying and selling could be so well-mannered and agreeable)/<color>$1<\/color>/ig;
         $tarExample =~ s/(have difficulty walking properly when they get home)/<color>$1<\/color>/ig;
         $tarExample =~ s/(having difficulty training this young dog)/<color>$1<\/color>/ig;
@@ -702,7 +736,7 @@ sub example_getColor {
     elsif ($word =~ /approve of sth./) {
 
         $tarExample = $example;
-        $tarExample =~ s/(approve of what I was doing, and that encouraged me to continue)/<color>$1<\/color>/ig;
+        $tarExample =~ s/(approve of what I was doing)/<color>$1<\/color>/ig;
         $tarExample =~ s/(approved of his marriage)/<color>$1<\/color>/ig;
         $tarExample =~ s/(approved of my correct behaviour)/<color>$1<\/color>/ig;
     }
@@ -755,12 +789,28 @@ sub example_getColor {
         $tarExample =~ s/(Keep your eyes on)/<color>$1<\/color>/ig;
         $tarExample =~ s/(kept his eyes on)/<color>$1<\/color>/ig;
     }
+    elsif ($word =~ /have an effect on/) {
+
+        $tarExample = $example;
+        $tarExample =~ s/((have|had) a)( (terrible|great|strong) )(effect on)/<color>$1<\/color>$3<color>$5<\/color>/ig;
+    }
+    elsif ($word =~ /throw oneself on/) {
+
+        $tarExample = $example;
+        $tarExample =~ s/(threw himself on)/<color>$1<\/color>/ig;
+    }
+    elsif ($word =~ /stocking/) {
+
+        $tarExample = $example;
+        if ($tarExample =~ s/(stockings)/<color>$1<\/color>/ig) {}
+        elsif ($tarExample =~ s/(stocking)/<color>$1<\/color>/ig) {}
+    }
     else {
 
         $example =~ s/\-/ \- /g if $word !~ /\-/;
         $example =~ s/\(/&% /g;
         $example =~ s/\)/ %&/g;
-
+        $example =~ s/(<.+?>)/ $1 /g;
         my @exmpData = split / /,$example;
 	
         if ($word =~ /=/) {
@@ -799,7 +849,7 @@ sub example_getColor {
 
             my $flag = 1;
             my $tmpVarExample = $varExample;
-            $tmpVarExample =~ s/"|,|\.|\?|!|://g;
+            $tmpVarExample =~ s/"|,|\.|\?|!|:|;//g;
             say $tmpVarExample if $word eq "nod";
             foreach my $varWord (@finalWordData) {
                 $varWord =~ s/[^A-Za-z0-9]$//g;
@@ -857,7 +907,8 @@ sub example_getColor {
     $tarExample .= $end;
     $tarExample =~ s/([\.\?\!])\.$/$1/g;
     $tarExample =~ s/([a-zA-Z])$/$1\./g;
-
+    $tarExample =~ s/(<[^\/]+?>) /$1/g;
+    $tarExample =~ s/ (<\/.+?>)/$1/g;
     return $tarExample;
 }
 
@@ -880,7 +931,6 @@ sub get_questions {
     $file =~ /sh(\d+)/;
     my $flag = $1;
     my @tmpQuestions = get_QA($file);
-   
     open IN ,"< $file", or die $!;
     open OUT ,"> $out", or die $!;
     my $num = 1;
@@ -891,19 +941,43 @@ sub get_questions {
         my @tmpQue = correct_QA(\@tmpQuestions,$item,$quesDBRef);
         my @questions;
 
-        my %checkHahs;
-        $checkHahs{$item{"word"}} = 1;
+        my %checkHash;
+        $checkHash{$item{"word"}} = 1;
         my $paraphrase = GetAllParaphrase($item{"paraphrase"});
-        $checkHahs{$paraphrase} = 1;
+        $checkHash{$paraphrase} = 1;
+        while ($paraphrase =~ s/([\x80-\xff]+)//) {
+            my $tmpData = decode("utf8",$1);
+            my $a = decode("utf8","；|，|！|？");
+            $tmpData =~ s/$a/#/g;
+            map {$checkHash{$_} = 1;} split /#/,encode("utf8",$tmpData);
+        }
 
         foreach my $var (@tmpQue) {
-
-            if (!exists $checkHahs{${$var}{"word"}} and
-                !exists $checkHahs{${$var}{"def"}}){
-
-                $checkHahs{${$var}{"word"}} = 1;
-                $checkHahs{${$var}{"def"}} = 1;
-                push @questions,$var;
+            my $quesFlag = 1;
+            if (!exists $checkHash{${$var}{"word"}} and
+                !exists $checkHash{${$var}{"def"}}){
+                my $tmpFullDef = ${$var}{"def"};
+                my @tmpDefAry = ();
+                
+                while ($tmpFullDef =~ s/([\x80-\xff]+)//) {
+                    my $tmpData = decode("utf8",$1);
+                    my $a = decode("utf8","；|，|！|？|（|）|：");
+                    $tmpData =~ s/$a/#/g;
+                    foreach my $tmpDef (split /#/,encode("utf8",$tmpData)) {
+                        if (exists $checkHash{$tmpDef}) {
+                            $quesFlag = 0;
+                            last;
+                        } else {
+                            push @tmpDefAry,$tmpDef;
+                        }
+                    }
+                }
+                if ($quesFlag) {
+                    $checkHash{${$var}{"word"}} = 1;
+                    $checkHash{${$var}{"def"}} = 1;
+                    map {$checkHash{$_} = 1;} @tmpDefAry;
+                    push @questions,$var;
+                }
             }
         }
         my @ques;
@@ -993,6 +1067,12 @@ sub get_questions {
         $quesSix{"pron"} = $item{"pron"};
 
         push @ques,\%quesSix;
+
+        ##########_Q7_##########
+        my %quesSeven = %quesFive;
+        $quesSeven{"type"} = 7; #类型同5 为规避使用7
+
+        push @ques,\%quesSeven;
         ##########__##########
         $item{"questions"} = \@ques;
         print OUT $jsonCoder->encode(\%item)."\n";
@@ -1161,10 +1241,13 @@ sub GetAllParaphrase {
         $paraphrase .= " ".${$tmpData}{"pos"} if exists ${$tmpData}{"pos"};
         $paraphrase .= " ".${$tmpData}{"chn"} if exists ${$tmpData}{"chn"};
         $paraphrase .= " ".${$tmpData}{"eng"} if exists ${$tmpData}{"eng"};
+        $paraphrase .= "<br>";
     }
     $paraphrase =~ s/ {2,}/ /g;
     $paraphrase =~ s/^ //g;
-    $paraphrase =~ s/ $//g;
+    $paraphrase =~ s/<br> /<br>/g;
+    $paraphrase =~ s/<br>$//;
+    $paraphrase =~ s/ $//;
 
     return $paraphrase;
 }

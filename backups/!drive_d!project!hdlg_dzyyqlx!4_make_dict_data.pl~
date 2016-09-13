@@ -30,15 +30,21 @@ while (<$DETAILS>) {
     $obj{"uwid"} = $uwid;
     $obj{"prev"} = $item{"prev"} if exists $item{"prev"};
     $obj{"next"} = $item{"next"} if exists $item{"next"};
-
+    $obj{"audio"} = ${$item{"body"}}{"audio"} if exists $item{"audio"};
     if ($index == 1) {
         $obj{"word"} = ${$item{"body"}}{"word"};
         $obj{"def"} = ${$item{"body"}}{"def"};
-        $obj{"audio"} = ${$item{"body"}}{"audio"};
         $obj{"img"} = ${$item{"body"}}{"img"} if exists ${$item{"body"}}{"img"};
+    }elsif ($index == 2) {
+        $obj{"word"} = ${$item{"body"}}{"phrase"};
+        $obj{"def"} = ${$item{"body"}}{"def"};
+    }elsif ($index == 3 or
+            $index == 4) {
+        $obj{"word"} = ${$item{"body"}}{"cont"};
+        $obj{"def"} = ${$item{"body"}}{"tran"};
     }else {
-        say "error $.";
-        next;
+        $obj{"word"} = ${$item{"body"}}{"note"}[0];
+        $obj{"def"} = "";
     }
     say $DICT $key."\t".$uwid."\t".$json->encode(\%obj);
 }

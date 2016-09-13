@@ -9,9 +9,11 @@ my $json = new JSON;
 
 my $in_file = "./tmp_data/hdlg_dzryqlx_import_data.txt";
 my $out_file = "./tmp_data/hdlg_dzryqlx_tmp_details.txt";
-
+my $img_log = "./tmp_data/img_log.txt";
+  
 open my $IN ,"<", $in_file or die $!;
 open my $OUT ,">", $out_file or die $!;
+open my $IMG_LOG ,">", $img_log or die $!;
 
 my %item = ();
 my @wordData = ();
@@ -20,13 +22,21 @@ my @senseCNData = ();
 my $chapterNum = 0;
 my $unitNum = 0;
 my $subNum = 0;
+my $otherFlag = 0;
+my $sentenceNum = 0;
 while (<$IN>) {
 	chomp;
 	my $line = $_;
 	
 	# ```chapter```
 	if ($line =~ /<cimg>(.+?)<\/cimg>/) {
-        $item{"img"} = $1;
+        InitNum(1);
+        my $oldImg = $1;
+        $oldImg =~ /(\.\w+)$/;
+        my $newImg = $chapterNum."_cover".$1;
+        $newImg =~ s/\.jpeg/\.jpg/;
+        $item{"img"} = $newImg;
+        say $IMG_LOG $oldImg."\t".$newImg;
         next;
     }
     if ($line =~ /<cbiaotiriwen>(.+?)<\/cbiaotiriwen>/) {
@@ -34,7 +44,6 @@ while (<$IN>) {
         next;
     }
     if ($line =~ /<cbiaotiz>(.+?)<\/cbiaotiz>/) {
-        InitNum(1);
         $item{"word"} = $1;
         $item{"type"} = "l_a";
         say $OUT $json->encode(\%item);
@@ -43,10 +52,20 @@ while (<$IN>) {
     }
 
     # ```unit```
-    if ($line =~ /\d <part>(.+?)(（.+?）)<\/part>/) {
+    if ($line =~ /\d <part>(.+?(（.+?）))<\/part>/) {
+        $otherFlag = 1;
         InitNum(2);
+        if ($2 eq "（词汇）") {
+            $item{"word"} = "图解词汇";
+        } elsif ($2 eq "（关键词）") {
+            $item{"word"} = "延伸短语";
+        } elsif ($2 eq "（会话）") {
+            $item{"word"} = "会话练习";
+        } elsif ($2 eq "（常用表达）") {
+            $item{"word"} = "实用表达";
+            $sentenceNum = 0;
+        }
         $item{"title"} = $1;
-        $item{"word"} = $2;
         $item{"type"} = "l_b";
         say $OUT $json->encode(\%item);
         %item = ();
@@ -70,15 +89,31 @@ while (<$IN>) {
     }
     if ($line =~ /<wimg>(.+?)<\/wimg>/) {
         InitNum(3);
-        my $img = $1;
-        $item{"img"} = $img;
-        $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        my $oldImg = $1;
+        $oldImg =~ /(\.\w+)$/;
+        my $newImg = $chapterNum."_".$subNum.$1;
+        $newImg =~ s/\.jpeg/\.jpg/;
         if (@wordData) {
             foreach my $tmpItem (@wordData) {
-                ${$tmpItem}{"img"} = $img;
+                if ($chapterNum == 22
+                    and $unitNum == 1
+                    and $subNum >= 8) {}
+                else {
+                    ${$tmpItem}{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+                }
+                ${$tmpItem}{"img"} = $newImg;
                 say $OUT $json->encode($tmpItem);
+                InitNum(3);
             }
             @wordData = ();
+        }
+        $item{"img"} = $newImg;
+        say $IMG_LOG $oldImg."\t".$newImg;
+        if ($chapterNum == 22
+            and $unitNum == 1
+            and $subNum >= 8) {}
+        else {
+            $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
         }
         say $OUT $json->encode(\%item);
         %item = ();
@@ -112,6 +147,11 @@ while (<$IN>) {
             PrintSense(\@senseData,\@senseCNData);
         }
         $item{"title"} = $1;
+        next;
+    }
+    if ($line =~ /<hbiaotiz>(.+?)<\/hbiaotiz>/) {
+        $item{"word"} = $1;
+        $item{"word"} =~ s/^\s+|\s+$//g;
         $item{"type"} = "l_c";
         say $OUT $json->encode(\%item);
         %item = ();
@@ -136,14 +176,15 @@ while (<$IN>) {
 
     # ```sentence```
     if ($line =~ /\d+ <bbiaoti>(.+?)<\/bbiaoti>/) {
-        $item{"title"} = $1;
+        $item{"word"} = $1;
+        $item{"word"} = ++$sentenceNum if $item{"word"} eq " ";
         $item{"type"} = "l_c";
         say $OUT $json->encode(\%item);
         %item = ();
         next;
     }
     if ($line =~ /^<hdbiaoti>(.+?)<\/hdbiaoti>/) {
-        $item{"title"} = $1;
+        $item{"word"} = $1;
         $item{"type"} = "l_d";
         say $OUT $json->encode(\%item);
         %item = ();
@@ -166,36 +207,64 @@ while (<$IN>) {
 
     # ```other```
     if ($line =~ /<buchongb>(.+?)<\/buchongb>/) {
-        $item{"title"} = trim($1);
+        if ($otherFlag) {
+             InitNum(2);
+             $item{"word"} = "补充知识";
+             $item{"title"} = "";
+             $item{"type"} = "l_b";
+             say $OUT $json->encode(\%item);
+             %item = ();
+             $otherFlag = 0;
+        }
+        $item{"word"} = trim($1);
         next;
     }
-    if ($line =~ /<buchongby>(.+?)<\/buchongby>/) {
-        InitNum(2);
-        $item{"word"} = $1;
+    if ($line =~ /<buchongby>(.*)<\/buchongby>/) {
+        InitNum(3);
+        $item{"title"} = $1;
         $item{"type"} = "l_c";
         say $OUT $json->encode(\%item);
         %item = ();
         next;
     }
-    if ($line =~ /<chujinb>(.+?)<\/chujinb>/ or
-        $line =~ /<chujinnr>(.+?)<\/chujinnr>/ or
-        $line =~ /<chujinimg>(.+?)<\/chujinimg>/ or
-        $line =~ /<chujinb>(.+?)<\/chujinb>/ or
-        $line =~ /<jipiaoimg>(.+?)<\/jipiaoimg>/ or
-        $line =~ /<dengjiz>(.+?)<\/dengjiz>/ or
-        $line =~ /<hangbanimg>(.+?)<\/hangbanimg>/ or
-        $line =~ /<hangbanz>(.+?)<\/hangbanz>/ or
-        $line =~ /<qianzhenimg>(.+?)<\/qianzhenimg>/ or
-        $line =~ /<qianzhenz>(.+?)<\/qianzhenz>/ or
-        $line =~ /<furiz>(.+?)<\/furiz>/ or
-        $line =~ /<gsz>(.+?)<\/gsz>/ or
-        $line =~ /<gsimg>(.+?)<\/gsimg>/) {
-        push @{$item{"note"}},trim($1)."<br>";
+    if ($line =~ /<xiaoxu>(.+?)<\/xiaoxu>/
+        or $line =~ /<chujinb>(.+?)<\/chujinb>/
+        or $line =~ /<chujinnr>(.+?)<\/chujinnr>/
+        or $line =~ /<chujinimg>(.+?)<\/chujinimg>/
+        or $line =~ /<jipiaoimg>(.+?)<\/jipiaoimg>/
+        or $line =~ /<jipiaoz>(.+?)<\/jipiaoz>/
+        or $line =~ /<dengjiz>(.+?)<\/dengjiz>/
+        or $line =~ /<hangbanimg>(.+?)<\/hangbanimg>/
+        or $line =~ /<hangbanz>(.+?)<\/hangbanz>/
+        or $line =~ /<qianzhenimg>(.+?)<\/qianzhenimg>/
+        or $line =~ /<qianzhenz>(.+?)<\/qianzhenz>/
+        or $line =~ /<furiz>(.+?)<\/furiz>/
+        or $line =~ /<gsz>(.+?)<\/gsz>/
+        or $line =~ /<gsimg>(.+?)<\/gsimg>/) {
+        my $otherData = $1;
+        if ($otherData =~ /(.*(\.png))/
+            or $otherData =~ /(.*(\.jpeg))/) {
+            InitNum(3);
+            my $oldImg = $1;
+            $otherData = $chapterNum."_tips_".$subNum.$2;
+            say $IMG_LOG $oldImg."\t".$otherData;
+            push @{$item{"note"}},{"image" => $otherData};
+        } else {
+            if ($otherData =~ /1 登机柜台/ or
+                $otherData =~ /2 查验护照/ or
+                $otherData =~ /3 安全检查/ or
+                $otherData =~ /4 进入登机门/ or
+                $otherData =~ /5 登机/) {
+                $otherData = "<h3>".$otherData."</h3>"
+            }
+            push @{$item{"note"}},trim($otherData)."<br>";
+        }
         next;
     }
-    if ($line eq "========================================") {
+    if ($line eq "========================================"
+        or $line eq "=============================================================") {
         $item{"type"} = "w_d";
-        say $OUT $json->encode(\%item);
+        say $OUT $json->encode(\%item) if exists $item{"note"};
         %item = ();
         next;
     }
@@ -203,6 +272,7 @@ while (<$IN>) {
 
 close $IN;
 close $OUT;
+close $IMG_LOG;
 
 sub PrintSense {
     my ($data,$dataCN) = @_;
@@ -216,6 +286,15 @@ sub PrintSense {
             $senseItem{"type"} = "w_d";
             $senseItem{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
             say $OUT $json->encode(\%senseItem);
+            if ($senseItem{"audio"} eq "4_3003.mp3") {
+                say $OUT $json->encode({"type" => "w_d", "cont" => "[<zy1><zy2>ぎん</zy2><zy3>銀</zy3></zy1><zy1><zy2>こう</zy2><zy3>行</zy3></zy1>で]", "tran" => "〔在银行〕"});
+            } elsif ($senseItem{"audio"} eq "5_2003.mp3") {
+                say $OUT $json->encode({"type" => "w_d", "cont" => "[<zy1><zy2>しばら</zy2><zy3>暫</zy3>く</zy1><zy1><zy2>た</zy2><zy3>経</zy3></zy1>ち]", "tran" => "〔过了一会儿〕"});
+            } elsif ($senseItem{"audio"} eq "5_2013.mp3") {
+                say $OUT $json->encode({"type" => "w_d", "cont" => "[20<zy1><zy2>ぷん</zy2><zy3>分</zy3></zy1><zy1><zy2>ご</zy2><zy3>後</zy3></zy1>]", "tran" => "〔20分钟后〕"});
+            } elsif ($senseItem{"audio"} eq "9_2002.mp3") {
+                say $OUT $json->encode({"type" => "w_d", "cont" => "[<zy1><zy2>ご</zy2><zy3>五</zy3><zy1><zy2>ぷん</zy2><zy3>分</zy1><zy1><zy2>ご</zy2><zy3>後</zy3></zy1>]", "tran" => "〔五分钟后〕"});
+            }
             %senseItem = ();
         }else {
             $senseItem{"role"} = ${$data}[$num];
@@ -254,15 +333,16 @@ sub GetPronNum {
     }
     else {
         if ($unit != 0 and $word != 0) {
-            $pronNum = $chap*10000 + $unit*100 + $word;
+            $pronNum = $chap*100000 + $unit*1000 + $word;
         }
         elsif ($unit != 0) {
-            $pronNum = $chap*10000 + $unit*100;
+            $pronNum = $chap*100000 + $unit*1000;
         }
         else {
-            $pronNum = $chap*10000;
+            $pronNum = $chap*100000;
         }
-
+     
+        $pronNum =~ s/0(\d{4})$/_$1/;
         return $pronNum;
     }
 };

@@ -4,6 +4,8 @@
 (add-to-list 'tramp-methods
     (list "d_pl"
        '(tramp-login-program "plink")
+        (setq tramp-debug-buffer t)
+        (setq tramp-verbose 10)
         (cons 'tramp-login-args
             (list (list 
                   '("-l" "%u")

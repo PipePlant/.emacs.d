@@ -1,0 +1,77 @@
+use warnings;
+use strict;
+use Data::Dumper;
+use feature qw(say);
+use JSON;
+use Encode;
+
+my $json = new JSON;
+
+my $in = "./juniorschool_json.txt";
+my $provinces = "./jh_provinces.txt";
+my $cities = "./jh_cities.txt";
+my $areas = "./jh_areas.txt";
+my $schools = "./jh_schools.txt";
+
+open IN ,"< $in", or die $!;
+open POUT ,"> $provinces", or die $!;
+open COUT ,"> $cities", or die $!;
+open AOUT ,"> $areas", or die $!;
+open SOUT ,"> $schools", or die $!;
+
+# ```get data```
+my $tmpData = <IN>;
+$tmpData = $json->decode($tmpData);
+my @data = @{$tmpData};
+
+my $provinceNum = 100000;
+my $cityNum;
+my $areaNum;
+my $schoolNum;
+my %schoolCheck = ();
+foreach my $province (@data) {
+
+	# ---province---
+	$provinceNum += 10000;
+	$cityNum = $provinceNum;
+	say POUT $provinceNum."\t".${$province}{"province"};
+
+	foreach my $city (@{${$province}{"cities"}}) {
+
+		# ---city---
+		$cityNum += 100;
+		$areaNum = $cityNum;
+		say COUT $cityNum."\t".${$city}{"city"};
+
+		foreach my $area (@{${$city}{"areas"}}) {
+
+			# ---area---
+			$areaNum++;
+			$schoolNum = 1000;
+			say AOUT $areaNum."\t".${${area}}{"area"};
+			%schoolCheck = ();
+			foreach my $school (@{${$area}{"schools"}}) {				
+				my $schoolName = ${$school}{"school"};
+				$schoolName =~ s/${$province}{"province"}市//g;
+				$schoolName =~ s/${$province}{"province"}//g;
+				$schoolName =~ s/${${area}}{"area"}//g;
+				$schoolName =~ s/^ *| *$//g;
+
+				if (!exists $schoolCheck{$schoolName}) {
+					# ---school---
+					$schoolNum++;
+					my $tmpNum = $areaNum*10000+$schoolNum;
+
+					say SOUT $tmpNum."\t".$schoolName;
+					$schoolCheck{$schoolName} = 1;
+				}
+			}
+		}
+	}
+}
+
+close IN;
+close POUT;
+close COUT;
+close AOUT;
+close SOUT;

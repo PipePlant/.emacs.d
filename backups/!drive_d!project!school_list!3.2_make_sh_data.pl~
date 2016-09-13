@@ -1,0 +1,44 @@
+use warnings;
+use strict;
+use Data::Dumper;
+use feature qw(say);
+use LWP;
+use HTTP::Request;
+use JSON;
+use Encode;
+
+my $in = "./sh_shcool_data_encode.txt";
+my $out = "./sh_tmp_schools.txt";
+my $area_out = "./sh_tmp_areas.txt";
+
+# ```~~~```
+open IN ,"< $in", or die $!;
+open OUT ,"> $out", or die $!;
+open AOUT ,"> $area_out", or die $!;
+
+my $prevLine = "";
+while (<IN>) {
+
+	my $line = $_;
+	while ($line =~ /\('city_qu_(\d+)'\)">(.+?)</g) {
+
+		say AOUT "$1\t$2";
+	}
+	if ($line =~ /<ul id="city_qu_(\d+)" style="display:none;">/) {
+
+		my $area = $1;
+		say OUT $area unless $prevLine =~ /^\d+$/;
+		$prevLine = $area;
+	}
+	if ($line =~ /\d">(.+?)<\/a><\/li>/) {
+
+		my $school = $1;
+		$school =~ s/^ +| +$//g;
+		say OUT $school;
+		$prevLine = $school;
+	}
+}	
+
+close IN;
+close OUT;
+close AOUT;
