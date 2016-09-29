@@ -1,0 +1,73 @@
+use warnings;
+use strict;
+use JSON;
+use Data::Dumper;
+use feature qw(say);
+
+$| = 1;
+my $json = new JSON;
+my %provinceList = qw(北京 2 天津 2 上海 2 重庆 2 黑龙江 1 吉林 1 辽宁 1 山东 1 山西 1 陕西 1 河北 1 河南 1 湖北 1 湖南 1 海南 1 江苏 1 江西 1 广东 1 广西 1 云南 1 贵州 1 四川 1 内蒙古 1 宁夏 1 甘肃 1 青海 1 西藏 1 新疆 1 安徽 1 浙江 1 福建 1 香港 1 澳门 1 台湾 1);
+
+my $original_file = "./original_data/ps_schools_16Sep_original.txt";
+my $province_file = "./ps/v2_provinces.txt";
+my $city_file = "./ps/v2_cities.txt";
+my $area_file = "./ps/v2_areas.txt";
+my $school_file = "./ps/v2_schools.txt";
+
+open my $ORIGINAL ,"<", $original_file or die $!;
+open my $PROVINCE ,">", $province_file or die $!;
+open my $CITY ,">", $city_file or die $!;
+open my $AREA ,">", $area_file or die $!;
+open my $SCHOOL ,">", $school_file or die $!;
+
+while (<$ORIGINAL>) {
+    my $line = $_;
+    my %item = %{$json->decode($line)};
+
+    if (exists $item{"text"}) {
+        # ```地区```
+        GetAndPrintRegionData(\%item,\%provinceList);
+    } else {
+        GetAndPrintSchoolData(\%item);
+    }
+}
+
+close $ORIGINAL;
+close $PROVINCE;
+close $CITY;
+close $AREA;
+close $SCHOOL;
+
+sub GetAndPrintRegionData {
+    my ($item,$provinceList) = @_;
+
+    if (exists ${$provinceList}{${$item}{"text"}}) {
+        if (${$provinceList}{${$item}{"text"}} == 2) {
+            # ```直辖市```
+            say $PROVINCE ${$item}{"id"}."\t".${$item}{"text"};
+            say $CITY ${$item}{"id"}."\t".${$item}{"text"}."市";
+        } elsif (${$provinceList}{${$item}{"text"}} == 1) {
+            # ```省```
+            say $PROVINCE ${$item}{"id"}."\t".${$item}{"text"};
+        }
+    } else {
+        if (${$item}{"id"} % 100) {
+            # ```区```
+            say $AREA ${$item}{"id"}."\t".${$item}{"text"};
+        } else {
+            # ```市```
+            say $CITY ${$item}{"id"}."\t".${$item}{"text"};
+        }
+    }
+};
+
+sub GetAndPrintSchoolData {
+    my $item = shift;
+    
+    my %newItem = ();
+    $newItem{"cname"} = ${$item}{"cname"};
+    $newItem{"shortName"} = ${$item}{"shortName"};
+    $newItem{"regionCode"} = ${$item}{"regionCode"};
+
+    say $SCHOOL $json->encode(\%newItem);
+};

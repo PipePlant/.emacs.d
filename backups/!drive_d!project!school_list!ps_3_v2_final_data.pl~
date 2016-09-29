@@ -1,0 +1,99 @@
+use warnings;
+use strict;
+use JSON;
+use Data::Dumper;
+use feature qw(say);
+
+$| = 1;
+my $json = new JSON;
+
+my %newSchoolList = ();
+my %allSchoolList = ();
+
+GetSchoolList(\%newSchoolList,\%allSchoolList);
+MergeData(\%newSchoolList);
+PrintSchool(\%allSchoolList);
+
+sub GetSchoolList {
+    my ($schoolList,$allSchoolList) = @_;
+
+    my $school_file = "./ps/v2_tmp_schools.txt";
+    open my $SCHOOL ,"<", $school_file or die $!;
+    while (<$SCHOOL>) {
+        $_ =~ /(.*)\t(.*)\t(.*)/;
+        my $type = $1;
+        my $tmpId = $2;
+        my $data = $3;
+        if ($type == 1) {
+            my $item = $json->decode($data);
+            my $id = ${$item}{"id"};
+            my $name = ${$item}{"cname"};
+            push @{${$schoolList}{$tmpId}},$id;
+            ${$allSchoolList}{$id} = $name;
+        } else {
+            ${$allSchoolList}{$tmpId} = $data;
+        }
+    }
+    close $SCHOOL;
+    
+    return 1;
+}
+
+sub MergeData {
+    my $schoolList = shift;
+    
+    my $area_file = "./ps/v2_areas.txt";
+    my $final_file = "./ps/v2_ps_areas_16Sep.txt";
+    open my $AREA ,"<", $area_file or die $!;
+    open my $FINAL ,">", $final_file or die $!;
+    while (<$AREA>) {
+        $_ =~ /(.*)\t(.*)/;
+        my $id = $1;
+        my $data = $2;
+
+        my %object = ("id" => $id, "word" => $data, "schools" => ${$schoolList}{$id});
+        unless ($object{"schools"}) {
+            my @tmpAry = ();
+            $object{"schools"} = \@tmpAry;
+        }
+        say $FINAL $id."\t".$json->encode(\%object);
+    }
+    close $AREA;
+    close $FINAL;
+    
+    return 1;
+}
+
+sub PrintSchool {
+    my $dataList = shift;
+
+    my $final_file = "./ps/v2_ps_schools_16Sep.txt";
+    open my $FINAL ,">", $final_file or die $!;
+    foreach my $k (sort {$a <=> $b} keys %{$dataList}) {
+        my $v = ${$dataList}{$k};
+        $v =~ s/　//g;
+        if ($v =~ s/^.+?(市|自治州|地区)(.*)/$2/) {
+            if (length $v > 15) {
+                $v =~ s/校区/#/g;
+                $v =~ s/西区/□/g;
+                my $tmpVar = "";
+                if ($v =~ s/(\(.+?区\))/△/) {
+                    $tmpVar = $1;
+                }
+                $v =~ s/\(东区\)/▽/g;
+                $v =~ s/\(北区\)/○/g;
+                if ($v =~ s/^.+?市(.+)/$1/) {}
+                elsif ($v =~ s/^.+?区(.+)/$1/) {}
+                elsif ($v =~ s/^.+?州(.+)/$1/) {}
+                elsif ($v =~ s/^.+?县(.+)/$1/) {}
+                $v =~ s/#/校区/g;
+                $v =~ s/□/西区/g;
+                $v =~ s/△/$tmpVar/ if $tmpVar;
+            }
+        }
+        say $FINAL $k."\t".$v;
+    }
+    close $FINAL;
+    
+    return 1;
+}

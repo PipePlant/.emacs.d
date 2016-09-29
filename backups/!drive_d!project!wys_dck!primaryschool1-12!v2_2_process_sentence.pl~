@@ -1,0 +1,58 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use Encode;
+use JSON;
+use feature qw(say);
+
+my @word_list_files = glob "./v2_data/word_list/*";
+
+foreach my $word_list_file (@word_list_files) {
+    $word_list_file =~ /(1l\d+)/;
+    my $sentence_file = "./v2_data/sentence/".$1."_sentence.txt";
+    my $output_file = "./v2_data/tmp_data/".$1."_additional_data.txt";
+    if (-e $sentence_file) {
+        open my $WORD ,"<", $word_list_file or die $!;
+        my @wordData = ();
+        while (<$WORD>) {
+            chomp;push @wordData,$_;
+        }
+        close $WORD;
+        
+        open my $SENTENCE ,"<", $sentence_file or die $!;
+        my @sentenceData = ();
+        while (<$SENTENCE>) {
+            chomp;
+            next if $_ eq "";
+            push @sentenceData,$_;
+        }
+        close $SENTENCE;
+        
+        open my $OUT ,">", $output_file or die $!;
+        foreach my $word (@wordData) {
+            say $OUT "==================";
+            say $OUT "<-> ".$word;
+            my $count = 0;
+            foreach my $srcWord (split / |\(|\)|=|\?|!/,$word) {
+                next if $srcWord eq "";
+                foreach my $sentence (@sentenceData) {
+                    $sentence =~ s/　//g;
+                    $sentence =~ s/\t//g;
+                    $sentence =~ s/’/'/g;
+                    
+                    foreach my $tagWord (split / |,|\.|\?|!|…|=|“|”/,$sentence) {
+                        next if $tagWord eq "";
+                        if ($tagWord =~ /^$srcWord$/i and
+                            $count <= 2) {
+                            say $OUT "[*] ".$sentence."\t";
+                            $count++;
+                        }
+                    }
+                }
+            }
+            say $OUT "";
+        }
+        close $SENTENCE;
+        close $OUT;
+    }
+}

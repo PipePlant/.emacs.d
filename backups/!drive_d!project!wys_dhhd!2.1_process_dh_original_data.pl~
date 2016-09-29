@@ -1,0 +1,38 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+unshift @INC,"./lib/";
+require XmlItem;
+require FormatItem;
+
+my $json = new JSON;
+my $original_file = "./original_data/wys_dh_original.txt";
+my $tidy_file = "./tmp_data/wys_dhhd_tidy.txt";
+
+open my $TIDY ,">", $tidy_file or die $!;
+open my $ORIGINAL ,"<", $original_file or die $!;
+my $index = "";
+my $itemData = "";
+my $itemStart = 0;
+while (<$ORIGINAL>) {
+    chomp;
+    my $line = $_;
+    if ($line =~ /<subdict letter="(.+?)">/) {
+        $index = $1;
+    }
+    if ($line =~ /<entry>/) {
+        $itemStart = 1;
+    } elsif ($line =~ /<\/entry>/) {
+        my $tidyItem = XmlItem::SelectDHBodyData($itemData);
+        ${$tidyItem}{"index"} = $index;
+        say $TIDY $json->encode($tidyItem);
+        $itemData = "";
+        $itemStart = 0;
+    } elsif ($itemStart) {
+        $itemData .= FormatItem::DHTag($line);
+    }
+}
+close $ORIGINAL;
+close $TIDY;

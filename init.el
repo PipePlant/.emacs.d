@@ -1,3 +1,10 @@
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+(package-initialize)
+
 (add-to-list 'load-path
     (expand-file-name "~/.emacs.d/lisp"))
 
@@ -31,8 +38,6 @@
 (require 'init-ace-jump-mode)
 ;; ````````` multiple-cursors `````````
 (require 'init-multiple-cursors)
-;; ````````` neotree `````````
-(require 'init-neotree)
 
 ;; ````````` cperl-mode `````````
 (require 'init-cperl-mode)
@@ -104,6 +109,9 @@
     ("#dc322f" "#cb4b16" "#b58900" "#546E00" "#B4C342" "#00629D" "#2aa198" "#d33682" "#6c71c4")))
  '(nyan-bar-length 20)
  '(org-support-shift-select (quote always))
+ '(package-selected-packages
+   (quote
+    (yaxception yasnippet xah-find powerline php-mode org nyan-mode nginx-mode multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
  '(pos-tip-background-color "#A6E22E")
  '(pos-tip-foreground-color "#272822")
  '(scroll-bar-mode nil)

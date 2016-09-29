@@ -9,10 +9,10 @@ use Digest::MD5::File qw(file_md5_hex);
 use Digest::MD5 qw(md5_hex);
 use Digest::MD5;
 
-my $Dir="./hdlg_dzyyqlx_kc_lixian_gzip/";
+my $Dir="./hdlg_dzryqlx_kc_lixian_gzip/";
 my $inputDIR = "hdlg";
-my $dtype="hdlg_dzyyqlx";
-my $online_pa="-6826lc11psd";
+my $dtype="hdlg_dzryqlx";
+my $online_pa="-6920lc5psd";
 
 #my $outputDIR="../lixianslice/".$inputDIR."_slice/";
 #unless( -e "lixianslice/"){
