@@ -3,10 +3,13 @@ use warnings;
 use Data::Dumper;
 use JSON;
 use feature qw(say);
-unshift @INC,"./lib/";
-require XmlItem;
-require FormatItem;
 
+my $xml_item_tool = "./t_dh_xml.pl";
+my $format_item_tool = "./t_format.pl";
+require $xml_item_tool;
+require $format_item_tool;
+
+$| = 1;
 my $json = new JSON;
 my $original_file = "./original_data/wys_dh_original.txt";
 my $tidy_file = "./tmp_data/wys_dhhd_tidy.txt";
@@ -25,13 +28,13 @@ while (<$ORIGINAL>) {
     if ($line =~ /<entry>/) {
         $itemStart = 1;
     } elsif ($line =~ /<\/entry>/) {
-        my $tidyItem = XmlItem::SelectDHBodyData($itemData);
+        my $tidyItem = SelectDHBodyData($itemData);
         ${$tidyItem}{"index"} = $index;
         say $TIDY $json->encode($tidyItem);
         $itemData = "";
         $itemStart = 0;
     } elsif ($itemStart) {
-        $itemData .= FormatItem::DHTag($line);
+        $itemData .= DHTag($line);
     }
 }
 close $ORIGINAL;

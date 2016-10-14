@@ -1,0 +1,15 @@
+use strict;
+use warnings;
+
+my $dh_orig_file = "./original_data/wys_dh_original.txt";
+open my $IN ,"<", $dh_orig_file or die $!;
+my @dhData = <$IN>;
+close $IN;
+
+open my $OUT ,">", $dh_orig_file or die $!;
+foreach my $line (@dhData) {
+    $line =~ s/(<word search="Balkon">)(<\/word>)/$1\n      Balkon\n      $2/;
+        
+    print $OUT $line;
+}
+close $OUT;

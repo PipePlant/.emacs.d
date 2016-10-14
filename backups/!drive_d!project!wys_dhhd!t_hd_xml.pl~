@@ -1,0 +1,145 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use feature qw(say);
+
+my $format_item_tool = "./t_format.pl";
+require $format_item_tool;
+
+sub SelectHDWordData {
+    my ($data) = @_;
+    my $test = $data;
+    # *** body layer a ***
+    my %obj = ();
+    # ```word & num & key```
+    $data =~ s/<word xrid="_(\d+)">(.+?)<\/word>//;
+    $obj{"num"} = $1;
+    $obj{"word"} = $2;
+    $obj{"key"} = $2;
+
+    # ```pinyin```
+    $data =~ s/<pinyin>(.+?)<\/pinyin>//;
+    $obj{"pinyin"} = $1;
+    
+    # *** sense layer b ***
+    $data =~ s/<senses>|<\/senses>|<senses id="\d+">//g;
+    my %sen = ();
+    while ($data =~ s/<sense>(.+?)<\/sense>//) {
+        my $tmpSen = $1;
+        # ```def```
+        if ($tmpSen =~ s/<def>(.+?)<\/def>//) {
+            $sen{"def"} = $1;
+        }
+        # ```gram => pos```
+        if ($tmpSen =~ s/<gram>(.+?)<\/gram>//) {
+            $sen{"pos"} = $1;
+        }
+        # *** example layer c ***
+        my %exp = ();
+        while ($tmpSen =~ s/<example>(.+?)<\/example>//) {
+            my $example = $1;
+            if ($example =~ s/<ex>(.+?)<\/ex>//) {
+                $exp{"ex"} = $1;
+            }
+            # ```trans```
+            if ($example =~ s/<trans>(.+?)<\/trans>//) {
+                $exp{"trans"} = $1;
+            }
+        }
+        PushStructData(\%sen,"example",\%exp);       
+        # ```gloss```
+        if ($tmpSen =~ s/<gloss>(.+?)<\/gloss>//) {
+            $sen{"gloss"} = $1;
+        }
+    }
+    PushStructData(\%obj,"sense",\%sen);
+    # ```reference```
+    while ($data =~ s/<ref targetid="_(\d+)">(.+?)<\/ref>//) {
+        push @{$obj{"reference"}},{"target",$2,"num",$1};
+    }
+    
+    return \%obj;
+}
+
+sub SelectHDPhraseData {
+    my ($data) = @_;
+
+    # *** phrase layer a ***
+    my %obj = ();
+    # ```word & num```
+    $data =~ s/<word xrid="_(\d+)">(.+?)<\/word>//;
+    $obj{"num"} = $1;
+    $obj{"word"} = $2;
+    # ```pinyin```
+    $data =~ s/<pinyin>(.+?)<\/pinyin>//;
+    $obj{"pinyin"} = $1;
+    # ```synonym```
+    if ($data =~ s/<synonym>(.+?)<\/synonym>//) {
+        $obj{"synonym"} = $1;
+    }
+    $data =~ s/<senses>|<\/senses>|<senses id="\d+">//g;
+    
+    # *** sense layer b ***
+    my %sen = ();
+    while ($data =~ s/<sense>(.+?)<\/sense>//) {
+        my $tmpSen = $1;
+        # ```def```
+        if ($tmpSen =~ s/<def>(.+?)<\/def>//) {
+            $sen{"def"} = $1;
+        }
+        # ```gram => pos```
+        if ($tmpSen =~ s/<gram>(.+?)<\/gram>//) {
+            $sen{"pos"} = $1;
+        }
+
+        # ***example layer c***
+        my %exp = ();
+        if ($tmpSen =~ s/<example>(.+?)<\/example>//) {
+            my $example = $1;
+            my $test = $1;
+            # ```ex```
+            if ($example =~ s/<ex>(.+?)<\/ex>//) {
+                $exp{"ex"} = $1;
+            }
+            # ```trans```
+            if ($example =~ s/<trans>(.+?)<\/trans>//) {
+                $exp{"trans"} = $1;
+            }
+            # ```gram => pos```
+            if ($example =~ s/<gram>(.+?)<\/gram>//) {
+                $exp{"pos"} = $1;
+            }
+            if ($example =~ /</) {
+                say $example;
+                say $test;
+                exit;
+            }
+            PushStructData(\%sen,"example",\%exp);
+        }
+        PushStructData(\%obj,"sense",\%sen);
+    }
+    # ```reference```
+    while ($data =~ s/<ref targetid="_(\d+)">(.+?)<\/ref>//) {
+        push @{$obj{"reference"}},{"target",$2,"num",$1};
+    }
+    # ```gloss```
+    if ($data =~ s/<gloss>(.+?)<\/gloss>//) {
+        $obj{"gloss"} = $1;
+    }
+    
+    return \%obj;
+}
+
+sub PushStructData {
+    my ($object,$objName,$item) = @_;
+
+    if (%{$item}) {
+        my %tmpHash = %{$item};
+        %{$item} = ();
+        push @{${$object}{$objName}},\%tmpHash;
+    }
+    
+    return 1;
+};
+
+1;

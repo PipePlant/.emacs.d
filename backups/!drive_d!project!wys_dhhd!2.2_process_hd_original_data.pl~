@@ -1,0 +1,55 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+
+my $xml_item_tool = "./t_hd_xml.pl";
+my $format_item_tool = "./t_format.pl";
+require $xml_item_tool;
+require $format_item_tool;
+
+$| = 1;
+my $json = new JSON;
+my $original_file = "./original_data/wys_hd_original.txt";
+my $tidy_file = "./tmp_data/hd_tidy.txt";
+
+open my $ORIGINAL ,"<", $original_file or die $!;
+open my $TIDY ,">", $tidy_file or die $!;
+my $indexRoot = "";
+my $indexSub = "";
+my $itemData = "";
+my $itemStart = 0;
+while (<$ORIGINAL>) {
+    chomp;
+    my $line = $_;
+    if ($line =~ /<subdict letter="(.+?)">/) {
+        $indexRoot = $1;
+    } elsif ($line =~ /<character pinyin="(.+?)">/) {
+        $indexSub = $1;
+    } elsif ($line =~ /<entry type="root">/) {
+        # ```word```
+        $itemStart = 1;
+    } elsif ($line =~ /<entry>/) {
+        # ```phrase```
+        $itemStart = 2;
+    } elsif ($line =~ /<\/entry>/) {
+        my $tidyItem = "";
+        if ($itemStart == 1) {
+            $tidyItem = SelectHDWordData($itemData);
+            ${$tidyItem}{"rootIndex"} = $indexRoot;
+            ${$tidyItem}{"subIndex"} = $indexSub;
+        # } elsif ($itemStart == 2) {
+            #     $tidyItem = SelectHDPhraseData($itemData);
+             say $TIDY $json->encode($tidyItem);
+            $itemData = "";
+            $itemStart = 0;
+        }
+       
+    } elsif ($itemStart) {
+        $itemData .= HDTag($line);
+    }
+}
+
+close $ORIGINAL;
+close $TIDY;
