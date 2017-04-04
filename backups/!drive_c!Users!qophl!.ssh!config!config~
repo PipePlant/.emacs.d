@@ -1,0 +1,4 @@
+Host pipeplant.github.com
+HostName github.com
+PreferredAuthentications publickey
+IdentityFile L/ssh_key/github.privateKey
