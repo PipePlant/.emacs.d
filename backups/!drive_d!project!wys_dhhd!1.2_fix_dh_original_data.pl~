@@ -1,0 +1,26 @@
+use strict;
+use warnings;
+
+my @DH = ("./original_data/wys_dh_original.txt",
+          "./original_data/dh20151207jiax/*.xml");
+my @HD = ("./original_data/wys_hd_original.txt",
+          "./original_data/hd20151207jiaxf/*.xml");
+
+MergeData(@DH);
+MergeData(@HD);
+
+sub MergeData {
+    my ($original_file,$tmp_orig_file) = @_;
+    my @tmp_files = glob $tmp_orig_file;
+
+    open my $ORIGINAL ,">", $original_file or die $!;
+    foreach my $tmp_file (@tmp_files) {
+        open my $TMP ,"<", $tmp_file or die $!;
+        while (<$TMP>) {
+            print $ORIGINAL $_;
+        }
+        close $TMP;
+    }
+    close $ORIGINAL;
+};
+

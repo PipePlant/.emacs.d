@@ -5,11 +5,13 @@ use feature qw(say);
 use JSON;
 use Encode;
 
-my $in = "./school_list.txt";
-my $provinces = "./ps_provinces.txt";
-my $cities = "./ps_cities.txt";
-my $areas = "./ps_areas.txt";
-my $schools = "./ps_schools.txt";
+my $json = new JSON;
+
+my $in = "./original_data/ps_schools_16Feb_original.txt";
+my $provinces = "./ps/ps_provinces.txt";
+my $cities = "./ps/ps_cities.txt";
+my $areas = "./ps/ps_areas.txt";
+my $schools = "./ps/ps_schools_16Feb.txt";
 
 my @municipality_id = qw(北京 天津 上海 重庆);
 my @province_list = qw(黑龙江 吉林 辽宁 山东 山西 陕西 河北 河南 湖北 湖南 海南 江苏 江西 广东 广西 云南 贵州 四川 内蒙古 宁夏 甘肃 青海 西藏 新疆 安徽 浙江 福建 香港 澳门 台湾);
@@ -84,25 +86,22 @@ sub make_data {
 
 			$num = 0;
 		}else {	#学校
-
-			$line =~ /"cname":"(.+?)"/;
-			my $region = $1;
-			$region =~ s/\s//g;
-			$region =~ s/　//g;
-			$region =~ s/2小/二小/g;
-			$region =~ s/\Q$cName\E//g;
-			my $tmpRegion = $region;
-			$region =~ s/\Q$aName\E//g;
-
+			my $item = $json->decode($line);
+			my $region = ${$item}{"cname"};
+			# $region =~ s/\s//g;
+			# $region =~ s/　//g;
+			# $region =~ s/2小/二小/g;
+			# $region =~ s/\Q$cName\E//g;
+			# my $tmpRegion = $region;
+			# $region =~ s/\Q$aName\E//g;
 			my $id = $regionNum;
 			$id = ($id*10000)+(++$num);
-			if ($region =~ /\w小学$/) {
 
-				say SCHOOL $id."\t".$tmpRegion;
-			}else {
-
+			# if ($region =~ /\w小学$/) {
+			# 	say SCHOOL $id."\t".$tmpRegion;
+			# }else {
 				say SCHOOL $id."\t".$region;
-			}
+			# }
 		}
 	}
 

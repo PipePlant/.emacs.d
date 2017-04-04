@@ -229,7 +229,11 @@
 		((:url . "http://elpa.gnu.org/packages/dbus-codegen.html")
 		 (:keywords "comm" "dbus" "convenience"))])
  (debbugs .
+<<<<<<< HEAD
 	  [(0 14)
+=======
+	  [(0 11)
+>>>>>>> 0a7e6df415e4f3ee664488404902d346873a5f5e
 	   ((soap-client
 	     (3 1 1))
 	    (cl-lib
@@ -354,7 +358,11 @@
 	       ((:keywords "calendar")
 		(:url . "http://elpa.gnu.org/packages/excorporate.html"))])
  (exwm .
+<<<<<<< HEAD
        [(0 13)
+=======
+       [(0 11)
+>>>>>>> 0a7e6df415e4f3ee664488404902d346873a5f5e
 	((xelb
 	  (0 12)))
 	"Emacs X Window Manager" tar
@@ -663,7 +671,11 @@
 	     ((:url . "https://github.com/michael-heerdegen/on-screen.el")
 	      (:keywords "convenience"))])
  (org .
+<<<<<<< HEAD
       [(20170210)
+=======
+      [(20161010)
+>>>>>>> 0a7e6df415e4f3ee664488404902d346873a5f5e
        nil "Outline-based notes management and organizer" tar nil])
  (osc .
       [(0 1)
@@ -933,7 +945,11 @@
 		 ((:url . "http://elpa.gnu.org/packages/url-http-ntlm.html")
 		  (:keywords "comm" "data" "processes" "hypermedia"))])
  (validate .
+<<<<<<< HEAD
 	   [(1 0 4)
+=======
+	   [(1 0 0)
+>>>>>>> 0a7e6df415e4f3ee664488404902d346873a5f5e
 	    ((emacs
 	      (24 1))
 	     (cl-lib
@@ -1023,7 +1039,11 @@
 	     ((:keywords "convenience" "emulation")
 	      (:url . "http://github.com/joaotavora/yasnippet"))])
  (ztree .
+<<<<<<< HEAD
 	[(1 0 5)
+=======
+	[(1 0 4)
+>>>>>>> 0a7e6df415e4f3ee664488404902d346873a5f5e
 	 ((cl-lib
 	   (0)))
 	 "Text mode directory tree" tar

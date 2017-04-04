@@ -17,7 +17,6 @@ my $buff;
     $buff = <$IN>;
     close $IN;
 }
-$buff =~ s/<gjc>ナンバープレート<\/gjc><gjcz>车牌<\/gjcz>(\n.*)*<gjcz>救车线<\/gjcz>//;
 $buff =~ s/<\/hriyu>\n<hriyu>//g;
 $buff =~ s/(<\/buchongb>\n)(<gsz>)/$1<buchongby><\/buchongby>$2/g;
 $buff =~ s/(（常用表达）<\/part>\n)(==========================\n)/$1==========================================\n01 <bbiaoti> <\/bbiaoti>\n$2/g;

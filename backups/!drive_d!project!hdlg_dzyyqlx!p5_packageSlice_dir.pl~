@@ -12,7 +12,7 @@ use Digest::MD5;
 my $Dir="./hdlg_dzyyqlx_kc_lixian_gzip/";
 my $inputDIR = "hdlg";
 my $dtype="hdlg_dzyyqlx";
-my $online_pa="-6822lc8psd";
+my $online_pa="-6920lc15psd";
 
 #my $outputDIR="../lixianslice/".$inputDIR."_slice/";
 #unless( -e "lixianslice/"){

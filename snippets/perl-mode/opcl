@@ -1,0 +1,5 @@
+# name: open ( ... ) close ( ... )
+# key: opcl
+# --
+open ${1:FileHandle} ,"${2:mode}", ${3:file} or die $!;
+close ${4:FileHandle};

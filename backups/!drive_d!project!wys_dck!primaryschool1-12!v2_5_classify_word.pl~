@@ -1,0 +1,35 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use Encode;
+use JSON;
+use feature qw(say);
+
+CopyAndRename(GetChangeList());
+
+sub GetChangeList {
+    my %audioList = ();
+    my $log_file = "./v2_data/final_data/audio_log.txt";
+    open my $LOG ,"<", $log_file or die $!;
+    while (<$LOG>) {
+        $_ =~ /(.*)\t(.*)/;
+        push @{$audioList{$1}},$2;
+    }
+    close $LOG;
+    return \%audioList;
+};
+
+sub CopyAndRename {
+    my $renameList = shift;
+    my $newPath = "../wys_dckxxfo_resources/";
+
+    foreach my $oldAudio (glob "../v2.0_data/1/*/*.mp3") {
+        $oldAudio =~ /.*(1l\d+\/.*)/;
+        my $oldName = $1;
+        if (exists ${$renameList}{$oldName}) {
+            foreach my $newName (@{${$renameList}{$oldName}}) {
+                copy ($oldAudio,$newPath.$newName);
+            }
+        }
+    }
+};

@@ -1,0 +1,150 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use Encode;
+use JSON;
+use feature qw(say);
+
+my $josn = new JSON;
+my $uwid_corp = 8;      #外研社
+my $uwid_len = 1;       # 0x00  16位
+
+my @tidyFiles = glob "./v2_data/tmp_data/*_tidy.txt";
+my $logFile = "./v2_data/final_data/audio_log.txt";
+
+open my $LOG ,">", $logFile or die $!;
+foreach my $tidyFile (@tidyFiles) {
+    $tidyFile =~ /(1l(\d+))/;
+    my $fullBookNum = $1;
+    my $bookNum = $2;
+    my $finalFile = "./v2_data/final_data/".$fullBookNum."_additional_final.txt";
+    my $word_list_file = "./v2_data/word_list/1l".$bookNum."_word_list.txt";
+
+    my %wordIndex = ();
+    open my $WORDLIST ,"<", $word_list_file or die $!;
+    while (<$WORDLIST>) {
+        $_ =~ /(.*)\t.*\t(.*)/;
+        $wordIndex{$1} = $2;
+    }
+    close $WORDLIST;
+
+    open my $TIDY ,"<", $tidyFile or die $!;
+    open my $FINAL ,">", $finalFile or die $!;
+
+    my $word = "";
+    my @object = ();
+    my $audioNum = 0;
+    while (<$TIDY>) {
+        my $line = $_;
+        
+        if ($line =~ /<-> (.*)/) {
+            $word = $1;
+        } elsif ($line =~ /(.+?)\t(.*)/) {
+            my $sentence = $1;
+            my $tmpAudio = $2;
+            if ($tmpAudio
+                and $tmpAudio !~ /zanque/) {
+                $sentence =~ s/\[\*\]//g;
+                $sentence =~ s/^ +| +$//g;
+                my $audio = "bookdata-".sprintf("%04s",++$audioNum).".mp3";
+                my %bookData = ();
+                $bookData{"sentence"} = ColorSentence($word,$sentence);
+                $bookData{"audio"} = $audio;
+                # 注意此处的uwid book和module 是1开始
+                $bookData{"uwid"} = ($uwid_corp << 26) | ($uwid_len << 24) | ($bookNum << 20) | ($wordIndex{$word} << 16) | (1 << 15) |($audioNum);
+                push @object,\%bookData;
+                say $LOG $fullBookNum."/".$tmpAudio.".mp3\t".sprintf("%02s",$bookNum)."-".sprintf("%02s",$wordIndex{$word})."_".$audio;
+            }
+        }
+        if ($line =~ /={3,}/
+            or eof) {
+            # ```print```
+            say $FINAL $word."\t".$josn->encode(\@object) if $word;
+            $word = "";
+            @object = ();
+        } 
+    }
+    
+    close $TIDY;
+    close $FINAL;
+}
+close $LOG;
+
+sub ColorSentence {
+    my ($word,$sent) = @_;
+
+    if ($word eq "am") {
+        $sent =~ s/I'm L/I<color>'m<\/color> L/;
+        $sent =~ s/am in/<color>am<\/color> in/;
+    } elsif ($word eq "not") {
+        $sent =~ s/isn't/is<color>n't<\/color>/;
+    } elsif ($word eq "What about...?") {
+        $sent =~ s/(what about you\?)/<color>$1<\/color>/;
+    } elsif ($word eq "How about...?") {
+       $sent =~ s/(How about your father\?)/<color>$1<\/color>/;
+   } elsif ($word eq "go shopping") {
+       $sent =~ s/(goes shopping)/<color>$1<\/color>/;
+   } elsif ($word eq "have got") {
+       $sent =~ s/('ve got)/<color>$1<\/color>/;
+   } elsif ($word eq "has got") {
+       $sent =~ s/(Has)( Sara )(got)/<color>$1<\/color>$2<color>$3<\/color>/;
+   } elsif ($word eq "make friends") {
+       $sent =~ s/(make)( new )(friends)/<color>$1<\/color>$2<color>$3<\/color>/;
+   } elsif ($word eq "try") {
+       $sent =~ s/(tries)/<color>$1<\/color>/;
+   } elsif ($word eq "go on a trip") {
+       $sent =~ s/(go on a)( school )(trip)/<color>$1<\/color>$2<color>$3<\/color>/;
+   } elsif ($word eq "look after") {
+       $sent =~ s/(looked after)/<color>$1<\/color>/;
+   } elsif ($word eq "run away") {
+       $sent =~ s/(ran away)/<color>$1<\/color>/;
+   } elsif ($word eq "take away") {
+       $sent =~ s/(take)( them )(away)/<color>$1<\/color>$2<color>$3<\/color>/;
+   } elsif ($word eq "take down") {
+       $sent =~ s/(take)( the books )(down)/<color>$1<\/color>$2<color>$3<\/color>/;
+   } elsif ($word eq "sandwich") {
+       $sent =~ s/(sandwishes)/<color>$1<\/color>/;
+   } elsif ($word =~ /(.*)=(.*)/) {
+        my $word1 = $1;
+        my $word2 = $2;
+        $word1 =~ s/(\s){2,}/$1/;
+        $word1 =~ s/^\s+|\s+$//;
+        $word2 =~ s/(\s){2,}/$1/;
+        $word2 =~ s/^\s+|\s+$//;
+        if ($sent =~ s/\b($word1)\b/<color>$1<\/color>/ig) {}
+        elsif ($sent =~ s/\b($word2)\b/<color>$1<\/color>/ig) {}
+    } else {
+        $word =~ s/[\?\!]$//g;
+        $word =~ s/\(.+?\)//;
+        $word =~ s/(\s){2,}/$1/;
+        $word =~ s/^\s+|\s$//;
+        
+        if ($sent eq $word) {
+            $sent = "<color>".$sent."</color>";
+        } else {
+            my @tmpOpts = ();
+            push @tmpOpts,$word;
+            push @tmpOpts,$word."'s";
+            push @tmpOpts,$word."'m";
+            $word =~ /(.)$/;
+            push @tmpOpts,$word.$1."ing";
+            $word =~ s/e$//;
+            push @tmpOpts,$word."s";
+            push @tmpOpts,$word."es";
+            push @tmpOpts,$word."ed";
+            push @tmpOpts,$word."ing";
+            foreach my $opt (@tmpOpts) {
+                last if $sent =~ s/\b($opt)\b/<color>$1<\/color>/ig;
+            }
+        }
+    }
+
+    if ($sent !~ /<color>/
+        and $sent =~ /$word/) {
+        say "N:<".$word.">\t".$sent;
+    } elsif ($sent =~ s/<color>/<color>/g > 1) {
+        say "M:<".$word.">\t".$sent;
+    }
+    
+    return $sent;
+};

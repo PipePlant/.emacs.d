@@ -1,0 +1,41 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use JSON;
+use feature qw(say);
+
+my $xml_item_tool = "./t_dh_xml.pl";
+my $format_item_tool = "./t_format.pl";
+require $xml_item_tool;
+require $format_item_tool;
+
+$| = 1;
+my $json = new JSON;
+my $original_file = "./original_data/wys_dh_original.txt";
+my $tidy_file = "./tmp_data/wys_dhhd_tidy.txt";
+
+open my $TIDY ,">", $tidy_file or die $!;
+open my $ORIGINAL ,"<", $original_file or die $!;
+my $index = "";
+my $itemData = "";
+my $itemStart = 0;
+while (<$ORIGINAL>) {
+    chomp;
+    my $line = $_;
+    if ($line =~ /<subdict letter="(.+?)">/) {
+        $index = $1;
+    }
+    if ($line =~ /<entry>/) {
+        $itemStart = 1;
+    } elsif ($line =~ /<\/entry>/) {
+        my $tidyItem = SelectDHBodyData($itemData);
+        ${$tidyItem}{"index"} = $index;
+        say $TIDY $json->encode($tidyItem);
+        $itemData = "";
+        $itemStart = 0;
+    } elsif ($itemStart) {
+        $itemData .= DHTag($line);
+    }
+}
+close $ORIGINAL;
+close $TIDY;

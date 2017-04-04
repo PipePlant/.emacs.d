@@ -1,0 +1,140 @@
+use strict;
+use warnings;
+use Data::Dumper;
+use feature qw(say);
+
+my $format_item_tool = "./t_format.pl";
+require $format_item_tool;
+
+sub SelectDHData {
+    my ($data) = @_;
+
+    # *** body layer a ***
+    my %obj = ();
+    if ($data =~ s/<word(.+?)<\/word>//) {
+        my $tmpWord = $1;
+        # ```tmpKey & word```
+        if ($tmpWord =~ s/ search="(.+?)">(.*)//) {
+            $obj{"tmpKey"} = $1;
+            $obj{"word"} = $2;
+        }
+        if ($tmpWord =~ s/ homo="(\d+)"//) {
+            $obj{"word"} .= "<up>".$1."</up>";
+        }
+        if ($tmpWord =~ / inflection="\*"/) {
+            $obj{"word"} .= " *";
+        }
+        $obj{"word"} = DHde($obj{"word"});
+    }
+    
+    # *** category layer b ***
+    my %catg = ();
+    while ($data =~ s/<category.*?>(.+?)<\/category>//) {
+        my $tmpCatg = $1;
+        
+        # ```object have no sense```
+        if ($tmpCatg !~ /<sense/) {
+            $tmpCatg =~ s/<.+?>//g;
+            ${$obj{"category"}[0]}{"sense"}[0]{"def"} = $tmpCatg;
+            return \%obj;
+        }
+        
+        my $prevTag = "";
+        my %sublayer = ();
+        while ($tmpCatg !~ /^<sense/) {
+            $tmpCatg =~ s/<(.+?)>(.+?)<\/(.+?)>//;
+            my $tagStart = $1;
+            my $tagData = $2;
+            my $tagEnd = $3;
+            $tagStart =~ s/ id="\d"//;
+            if ($tagStart eq "gram") {
+                # ```pos & gram```
+                # 待仔细处理，标签里的内容
+                PushStructData(\%catg,"sublayer",\%sublayer);
+                $sublayer{"gram"} .= $tagData;
+            } elsif ($tagStart eq "variant") {
+                # ```variant```
+                $sublayer{"variant"} .= "; ".DHde($tagData);
+                $sublayer{"variant"} =~ s/^; //;
+            } elsif ($tagStart eq "phrase") {
+                # ```phrase```
+                $sublayer{"phrase"} .= "; ".DHde($tagData);
+                $sublayer{"phrase"} =~ s/^; //;
+            }
+        }
+        PushStructData(\%catg,"sublayer",\%sublayer);
+        
+        # *** sence layer c ***
+        my %sen = ();
+        while ($tmpCatg =~ s/<sense.*?>(.+?)<\/sense>//) {
+            my $tmpSen = $1;
+            # *** idiom ***
+            while ($tmpSen =~ s/<idiom(.+?)<\/idiom>//) {
+                my $tmpIdm = $1;
+                my %idm = ();
+                # ```title```
+                $tmpIdm =~ s/ desc="(.+?)" id=".+?">//;
+                $idm{"title"} = $1;
+                # ```phrase```
+                while ($tmpIdm =~ s/<phrase>(.+?)<\/phrase>//) {
+                    $idm{"phrase"} = $1;
+                }
+                # ```style```
+                while ($tmpIdm =~ s/<style>(.+?)<\/style>//) {
+                    $idm{"style"} = $1;
+                }
+                # ```trans```
+                while ($tmpIdm =~ s/<trans>(.+?)<\/trans>//) {
+                    $idm{"trans"} = $1;
+                }
+                PushStructData(\%sen,"idiom",\%idm);
+            }
+            # ```gram```
+            while ($tmpSen =~ s/<gram>(.+?)<\/gram>//) {
+                $sen{"gram"} = $1;
+            }
+            # ```style```
+            while ($tmpSen =~ s/<style>(.+?)<\/style>//) {
+                $sen{"style"} = $1;
+            }
+            # ```region```
+            while ($tmpSen =~ s/<region>(.+?)<\/region>//) {
+                $sen{"region"} = $1;
+            }
+            # ```variant```
+            while ($tmpSen =~ s/<variant>(.+?)<\/variant>//) {
+                $sen{"variant"} = $1;
+            }
+            # ```def```
+            while ($tmpSen =~ s/<def>(.+?)<\/def>//) {
+                $sen{"def"} = $1;
+            }
+            # ```phrase```
+            while ($tmpSen =~ s/<phrase>(.+?)<\/phrase>//) {
+                $sen{"phrase"} = $1;
+            }
+            # ```example```
+            while ($tmpSen =~ s/<example>(.+?)<\/example>//) {
+                $sen{"example"} = $1;
+            }
+            PushStructData(\%catg,"sense",\%sen);
+        }
+        PushStructData(\%obj,"category",\%catg);
+    }
+    
+    return \%obj;
+}
+
+sub PushStructData {
+    my ($object,$objName,$item) = @_;
+
+    if (%{$item}) {
+        my %tmpHash = %{$item};
+        %{$item} = ();
+        push @{${$object}{$objName}},\%tmpHash;
+    }
+    
+    return 1;
+};
+
+1;

@@ -95,12 +95,12 @@ while (<$IN>) {
         $newImg =~ s/\.jpeg/\.jpg/;
         if (@wordData) {
             foreach my $tmpItem (@wordData) {
-                if ($chapterNum == 22
-                    and $unitNum == 1
-                    and $subNum >= 8) {}
-                else {
-                    ${$tmpItem}{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
-                }
+                # if ($chapterNum == 22
+                #     and $unitNum == 1
+                #     and $subNum >= 8) {}
+                # else {
+                    # ${$tmpItem}{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+                # }
                 ${$tmpItem}{"img"} = $newImg;
                 say $OUT $json->encode($tmpItem);
                 InitNum(3);
@@ -109,12 +109,12 @@ while (<$IN>) {
         }
         $item{"img"} = $newImg;
         say $IMG_LOG $oldImg."\t".$newImg;
-        if ($chapterNum == 22
-            and $unitNum == 1
-            and $subNum >= 8) {}
-        else {
+        # if ($chapterNum == 22
+        #     and $unitNum == 1
+        #     and $subNum >= 8) {}
+        # else {
             $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
-        }
+        # }
         say $OUT $json->encode(\%item);
         %item = ();
         next;
@@ -129,7 +129,15 @@ while (<$IN>) {
         InitNum(3);
         $item{"def"} = $1;
         $item{"type"} = "w_c";
-        $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        # if ($chapterNum == 2
+        #     and $unitNum == 2
+        #     and $subNum > 28) {}
+        # elsif ($chapterNum == 7
+        #     and $unitNum == 2
+        #     and $subNum > 18) {}
+        # else {
+            $item{"audio"} = GetPronNum($chapterNum,$unitNum,$subNum).".mp3";
+        # }
         say $OUT $json->encode(\%item);
         %item = ();
         next;
@@ -341,7 +349,7 @@ sub GetPronNum {
         else {
             $pronNum = $chap*100000;
         }
-     
+        
         $pronNum =~ s/0(\d{4})$/_$1/;
         return $pronNum;
     }
