@@ -1,0 +1,100 @@
+use warnings;
+use strict;
+use JSON;
+use Data::Dumper;
+use Encode;
+use File::Find;
+use Cwd;
+use feature qw(say);
+
+1;
+
+my %dtypeConfig = (
+    0 => 'zootopia',
+    1 => 'bighero6',
+    2 => 'frozen',
+    3 => 'moana',
+    4 => 'snowwhite',
+    5 => 'dinosaur',
+    6 => 'dory',
+    7 => 'lionking',
+    8 => 'insideout',
+    9 => 'beauty',
+    10 => 'winnie',
+    11 => 'mickey',
+    );
+my %nameConfig = (
+    'zootopia' => '疯狂动物城',
+    'bighero6' => '超能陆战队',
+    'frozen' => '冰雪奇缘',
+    'moana' => '海洋奇缘',
+    'snowwhite' => '白雪公主和七个小矮人',
+    'dinosaur' => '恐龙当家',
+    'dory' => '海底总动员2：多莉去哪儿',
+    'lionking' => '狮子王',
+    'insideout' => '头脑特工队',
+    'beauty' => '睡美人',
+    'winnie' => '小熊维尼',
+    'mickey' => '米奇和他的小伙伴们',
+    );
+
+sub GetDtypeArray {
+    return map {$dtypeConfig{$_}} sort {$a <=> $b} keys %dtypeConfig;
+};
+
+sub GetDtypeByNum {
+    my $num = shift;
+
+    return $dtypeConfig{$num};
+};
+
+sub GetDtypeNum {
+    my $dtype = shift;
+    my %dtypeItem = reverse %dtypeConfig;
+
+    return $dtypeItem{$dtype};
+};
+
+sub GetNameByDtype {
+    my $dtype = shift;
+
+    return $nameConfig{$dtype};
+};
+sub FormatEN {
+    my $en = shift;
+
+    $en =~ s/&#9;/ /g;
+    $en =~ s/’/'/g;
+    $en =~ s/‘/'/g;
+    $en =~ s/(\.|\!|\?)“/$1 “/g;
+    $en =~ s/“/"/g;
+    $en =~ s/”/"/g;
+    $en =~ s/\. \. \./\.\.\./g;
+
+    return $en;
+};
+
+sub ItalicSpeech {
+    my $string = shift;
+
+    if ($string =~ s/(adv\.)/<i>$1<\/i>/) {}
+    elsif ($string =~ s/(adj\.)/<i>$1<\/i>/) {}
+    elsif ($string =~ s/(pron\.)/<i>$1<\/i>/) {}
+    elsif ($string =~ s/(prep\.)/<i>$1<\/i>/) {}
+    elsif ($string =~ s/(conj.)/<i>$1<\/i>/) {}
+    elsif ($string =~ s/(int\.)/<i>$1<\/i>/) {}
+    elsif ($string =~ s/(n\.)/<i>$1<\/i>/) {}
+    elsif ($string =~ s/(v\.)/<i>$1<\/i>/) {}
+
+    return $string;
+};
+
+sub Trim {
+    my $string = shift;
+
+    $string =~ s/ {2,}/ /g;
+    $string =~ s/^ +//g;
+    $string =~ s/ +$//g;
+
+    return $string;
+}

@@ -111,11 +111,7 @@
  '(org-support-shift-select (quote always))
  '(package-selected-packages
    (quote
-<<<<<<< HEAD
     (yaxception yasnippet xah-find powerline php-mode org nyan-mode nginx-mode neotree multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
-=======
-    (yaxception yasnippet xah-find powerline php-mode org nyan-mode nginx-mode multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
->>>>>>> 0a7e6df415e4f3ee664488404902d346873a5f5e
  '(pos-tip-background-color "#A6E22E")
  '(pos-tip-foreground-color "#272822")
  '(scroll-bar-mode nil)
