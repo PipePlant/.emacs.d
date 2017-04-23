@@ -1,3 +1,4 @@
+(require-package 'php-mode)
 (require 'php-mode)
 
 (add-hook 'php-mode-user-hook 'turn-on-font-lock)

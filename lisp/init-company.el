@@ -1,3 +1,4 @@
+(require-package 'company)
 (autoload 'company-mode "company" nil t)
 
 (setq company-idle-delay 0)

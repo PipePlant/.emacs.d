@@ -1,7 +1,9 @@
 ;; ````````` monokai `````````
+(require-package 'monokai-theme)
 (load-theme 'monokai t)
 
 ;; ````````` moe `````````
+;(require-package 'moe-theme)
 ; (require 'moe-theme)
 ; (setq moe-theme-highlight-buffer-id t)
 ; (setq moe-theme-resize-markdown-title '(1.5 1.4 1.3 1.2 1.0 1.0))

@@ -1,3 +1,4 @@
+(require-package 'nyan-mode)
 '(:eval (when nyan-mode (list (nyan-create))))
 
 (nyan-mode t)

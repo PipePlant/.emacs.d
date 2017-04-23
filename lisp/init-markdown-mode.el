@@ -1,3 +1,4 @@
+(require-package 'markdown-mode)
 (require 'markdown-mode)
 
 (setq markdown-command "pandoc -f markdown -t html -s --mathjax --highlight-style pygments")

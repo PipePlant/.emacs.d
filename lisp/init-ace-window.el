@@ -1,3 +1,4 @@
+(require-package 'ace-window)
 (require 'ace-window)
 
 (global-set-key (kbd "M-l") 'ace-window)

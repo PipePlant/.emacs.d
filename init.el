@@ -1,8 +1,10 @@
-
+;;; package --- Summary
+;;; Commentary:
 ;; Added by Package.el.  This must come before configurations of
 ;; installed packages.  Don't delete this line.  If you don't want it,
 ;; just comment it out by adding a semicolon to the start of the line.
 ;; You may delete these explanatory comments.
+;;; Code:
 (package-initialize)
 
 (add-to-list 'load-path
@@ -38,6 +40,10 @@
 (require 'init-ace-jump-mode)
 ;; ````````` multiple-cursors `````````
 (require 'init-multiple-cursors)
+;; ````````` 设置字体 `````````
+(require 'init-chinese-fonts-setup)
+;; ````````` neotree `````````
+(require 'init-neotree)
 
 ;; ````````` cperl-mode `````````
 (require 'init-cperl-mode)
@@ -62,6 +68,8 @@
    ["#1d1f21" "#cc6666" "#b5bd68" "#f0c674" "#81a2be" "#b294bb" "#81a2be" "#c5c8c6"])
  '(ansi-term-color-vector
    [unspecified "#1d1f21" "#cc6666" "#b5bd68" "#f0c674" "#81a2be" "#b294bb" "#81a2be" "#c5c8c6"] t)
+ '(cfs--current-profile "profile1" t)
+ '(cfs--profiles-steps (quote (("profile1" . 4))) t)
  '(column-number-mode t)
  '(compilation-message-face (quote default))
  '(cperl-close-paren-offset 0)
@@ -111,7 +119,7 @@
  '(org-support-shift-select (quote always))
  '(package-selected-packages
    (quote
-    (yaxception yasnippet xah-find powerline php-mode org nyan-mode nginx-mode neotree multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
+    (yaxception yasnippet xah-find powerline nginx-mode neotree multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
  '(pos-tip-background-color "#A6E22E")
  '(pos-tip-foreground-color "#272822")
  '(scroll-bar-mode nil)
@@ -158,3 +166,5 @@
  '(cperl-hash-face ((t (:foreground "SeaGreen3"))))
  '(cperl-indent-level 4))
 (put 'downcase-region 'disabled nil)
+
+(provide 'init)

@@ -1,5 +1,5 @@
 ;; ````````` work path `````````
-(setq default-directory "d:/" )
+;; (setq default-directory "d:/" )
 ;; ````````` line number `````````
 (global-linum-mode t)
 
@@ -31,15 +31,24 @@
 ; (modify-coding-system-alist 'process "*" 'utf-8)
 
 ;; ````````` Setting Font `````````
-;; Setting English Font
-(set-face-attribute
-    'default nil :font "consolas 11")
-;; Chinese Font
-(dolist (charset '(kana han symbol cjk-misc bopomofo))
+(if (eq system-type 'windows-nt)
+  ;;English Font
+  (set-face-attribute 'default nil :font "consolas 11")
+  ;;Chinese Font
+  (dolist (charset '(kana han symbol cjk-misc bopomofo))
     (set-fontset-font (frame-parameter nil 'font)
-        charset
-        (font-spec :family "microsoft yahei" :size 13)))
-        ; (font-spec :family "WenQuanYi Micro Hei Mono" :size 14)))
+      charset (font-spec :family "microsoft yahei"
+                         :size 13))))
+
+(if (eq system-type 'gnu/linux)
+  ;;English Font
+  (set-face-attribute 'default nil :font "Consolas 12")
+  ;;Chinese Font
+(dolist (charset '(kana han cjk-misc bopomofo))
+  (set-fontset-font (frame-parameter nil 'font) charset
+                    (font-spec :family "微软雅黑" :size 50)))
+)
+;;WenQuanYi Micro Hei Mono
 
 ;; ````````` show time `````````
 (display-time-mode 1)
