@@ -33,22 +33,30 @@
 ;; ````````` Setting Font `````````
 (if (eq system-type 'windows-nt)
   ;;English Font
-  (set-face-attribute 'default nil :font "consolas 11")
+  (set-face-attribute
+   'default nil
+   :font (font-spec :name "-outline-Consolas-bold-normal-normal-mono-*-*-*-*-c-*-iso10646-1"
+                    :weight 'normal
+                    :slant 'normal
+                    :size 11.5))
   ;;Chinese Font
   (dolist (charset '(kana han symbol cjk-misc bopomofo))
-    (set-fontset-font (frame-parameter nil 'font)
-      charset (font-spec :family "microsoft yahei"
-                         :size 13))))
+    (set-fontset-font
+     (frame-parameter nil 'font)
+     charset
+     (font-spec :name "-outline-微软雅黑-normal-normal-normal-sans-*-*-*-*-p-*-iso10646-1"
+                :weight 'normal
+                :slant 'normal
+                :size 12.0))))
 
-(if (eq system-type 'gnu/linux)
-  ;;English Font
-  (set-face-attribute 'default nil :font "Consolas 12")
-  ;;Chinese Font
-(dolist (charset '(kana han cjk-misc bopomofo))
-  (set-fontset-font (frame-parameter nil 'font) charset
-                    (font-spec :family "微软雅黑" :size 50)))
-)
-;;WenQuanYi Micro Hei Mono
+; (if (eq system-type 'gnu/linux)
+;   ;;English Font
+;   (set-face-attribute 'default nil :font "Consolas 12")
+;   ;;Chinese Font
+; (dolist (charset '(kana han cjk-misc bopomofo))
+;   (set-fontset-font (frame-parameter nil 'font) charset
+;                     (font-spec :family "微软雅黑" :size 13)))
+; )
 
 ;; ````````` show time `````````
 (display-time-mode 1)
