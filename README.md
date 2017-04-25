@@ -34,11 +34,11 @@
 (define-key yas-minor-mode-map (kbd "TAB") nil)
 (define-key yas-minor-mode-map (kbd "C-c k") 'yas-expand)
 ```
-### ecb
+
+### neotree
 ```lisp
-(global-set-key [f11] 'ecb-activate)
-(global-set-key [f12] 'ecb-deactivate)
+(global-set-key [f8] 'neotree-toggle)
 ```
-## Color Them
-The file path is "~/thems";
-But now I ues them for elpa;
+
+## Them
+use pkg colot them

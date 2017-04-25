@@ -69,7 +69,7 @@
  '(ansi-term-color-vector
    [unspecified "#1d1f21" "#cc6666" "#b5bd68" "#f0c674" "#81a2be" "#b294bb" "#81a2be" "#c5c8c6"] t)
  '(cfs--current-profile "profile1" t)
- '(cfs--profiles-steps (quote (("profile1" . 3))) t)
+ '(cfs--profiles-steps (quote (("profile1" . 4))) t)
  '(column-number-mode t)
  '(compilation-message-face (quote default))
  '(cperl-close-paren-offset 0)

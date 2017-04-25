@@ -49,14 +49,21 @@
                 :slant 'normal
                 :size 12.0))))
 
-; (if (eq system-type 'gnu/linux)
-;   ;;English Font
-;   (set-face-attribute 'default nil :font "Consolas 12")
-;   ;;Chinese Font
-; (dolist (charset '(kana han cjk-misc bopomofo))
-;   (set-fontset-font (frame-parameter nil 'font) charset
-;                     (font-spec :family "微软雅黑" :size 13)))
-; )
+(if (eq system-type 'gnu/linux)
+ (set-face-attribute
+  'default nil
+  :font (font-spec :name "-MS  -Consolas-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1"
+                   :weight 'normal
+                   :slant 'normal
+                   :size 12.5))
+ (dolist (charset '(kana han symbol cjk-misc bopomofo))
+   (set-fontset-font
+    (frame-parameter nil 'font)
+    charset
+    (font-spec :name "-WQYF-文泉驿等宽微米黑-normal-normal-normal-*-*-*-*-*-*-0-iso10646-1"
+               :weight 'normal
+               :slant 'normal
+               :size 13.5))))
 
 ;; ````````` show time `````````
 (display-time-mode 1)
