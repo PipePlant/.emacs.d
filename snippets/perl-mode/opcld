@@ -1,0 +1,5 @@
+# name: opendir ( ... ) closedir ( ... )
+# key: opcld
+# --
+opendir ${1:DIRHANDLE} ,${2:directory} or die $!;
+closedir ${3:DIRHANDLE};

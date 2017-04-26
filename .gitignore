@@ -1,0 +1,12 @@
+auto-save-list/
+backups/
+chinese-fonts-setup/
+elpa/
+eshell/
+url/
+var/
+tramp
+.\#*
+.svn
+*.log
+*~
