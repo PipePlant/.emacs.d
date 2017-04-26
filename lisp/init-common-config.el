@@ -1,3 +1,9 @@
+(setq *is-a-mac* (eq system-type 'darwin))
+(setq *win64* (eq system-type 'windows-nt) )
+(setq *cygwin* (eq system-type 'cygwin) )
+(setq *linux* (or (eq system-type 'gnu/linux) (eq system-type 'linux)) )
+(setq *unix* (or *linux* (eq system-type 'usg-unix-v) (eq system-type 'berkeley-unix)) )
+
 ;; ````````` work path `````````
 ;; (setq default-directory "d:/" )
 ;; ````````` line number `````````
@@ -21,7 +27,7 @@
 ; (set-buffer-file-coding-system 'chinese-gbk)
 ; (modify-coding-system-alist 'process "*" 'chinese-gbk)
 ;
-;; UTF-8 settings
+;; UTF-8 set-terminal-coding-system
 ; (set-language-environment "UTF-8")
 ; (set-terminal-coding-system 'utf-8)
 ; (set-keyboard-coding-system 'utf-8)
@@ -31,7 +37,7 @@
 ; (modify-coding-system-alist 'process "*" 'utf-8)
 
 ;; ````````` Setting Font `````````
-(if (eq system-type 'windows-nt)
+(when *win64*
   ;;English Font
   (set-face-attribute
    'default nil
@@ -47,9 +53,9 @@
      (font-spec :name "-outline-微软雅黑-normal-normal-normal-sans-*-*-*-*-p-*-iso10646-1"
                 :weight 'normal
                 :slant 'normal
-                :size 12.0))))
+                :size 10.5))))
 
-(if (eq system-type 'gnu/linux)
+(when *linux*
  (set-face-attribute
   'default nil
   :font (font-spec :name "-MS  -Consolas-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1"

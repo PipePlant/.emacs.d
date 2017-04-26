@@ -69,7 +69,7 @@
  '(ansi-term-color-vector
    [unspecified "#1d1f21" "#cc6666" "#b5bd68" "#f0c674" "#81a2be" "#b294bb" "#81a2be" "#c5c8c6"] t)
  '(cfs--current-profile "profile1" t)
- '(cfs--profiles-steps (quote (("profile1" . 4))) t)
+ '(cfs--profiles-steps (quote (("profile1" . 2))) t)
  '(column-number-mode t)
  '(compilation-message-face (quote default))
  '(cperl-close-paren-offset 0)
@@ -119,7 +119,7 @@
  '(org-support-shift-select (quote always))
  '(package-selected-packages
    (quote
-    (yaxception yasnippet xah-find powerline nginx-mode neotree multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
+    (0blayout yaxception yasnippet xah-find powerline nginx-mode neotree multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
  '(pos-tip-background-color "#A6E22E")
  '(pos-tip-foreground-color "#272822")
  '(scroll-bar-mode nil)
