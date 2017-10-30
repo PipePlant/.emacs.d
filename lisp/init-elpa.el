@@ -5,7 +5,8 @@
 (when (< emacs-major-version 24)
   (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-(add-to-list 'package-archives '("popkit" . "https://elpa.popkit.org/packages/"))
+;; Chinese Mirror
+; (add-to-list 'package-archives '("popkit" . "https://elpa.popkit.org/packages/"))
 
 ;; 定义require-package函数
 (defun require-package (package &optional min-version no-refresh)

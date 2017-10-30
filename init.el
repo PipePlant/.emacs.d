@@ -50,7 +50,7 @@
 ;; ````````` php-mode `````````
 (require 'init-php-mode)
 ;; ````````` markdown-mode `````````
-(require 'init-markdown-mode)
+; (require 'init-markdown-mode)
 ;; ````````` org-mode `````````
 (require 'init-org-mode)
 ;; ````````` nginx-mode `````````
@@ -65,7 +65,7 @@
  '(ansi-color-faces-vector
    [default bold shadow italic underline bold bold-italic bold])
  '(ansi-color-names-vector
-   ["#1d1f21" "#cc6666" "#b5bd68" "#f0c674" "#81a2be" "#b294bb" "#81a2be" "#c5c8c6"])
+   ["#272822" "#F92672" "#A6E22E" "#E6DB74" "#66D9EF" "#FD5FF0" "#A1EFE4" "#F8F8F2"])
  '(ansi-term-color-vector
    [unspecified "#1d1f21" "#cc6666" "#b5bd68" "#f0c674" "#81a2be" "#b294bb" "#81a2be" "#c5c8c6"] t)
  '(cfs--current-profile "profile1" t)
@@ -86,7 +86,7 @@
  '(display-time-mode t)
  '(ecb-auto-update-methods-after-save t)
  '(ecb-options-version "2.40")
- '(fci-rule-color "#49483E")
+ '(fci-rule-color "#3C3D37")
  '(global-ede-mode nil)
  '(highlight-changes-colors (quote ("#FD5FF0" "#AE81FF")))
  '(highlight-symbol-colors
@@ -97,14 +97,14 @@
  '(highlight-symbol-foreground-color "#586e75")
  '(highlight-tail-colors
    (quote
-    (("#49483E" . 0)
+    (("#3C3D37" . 0)
      ("#679A01" . 20)
      ("#4BBEAE" . 30)
      ("#1DB4D0" . 50)
      ("#9A8F21" . 60)
      ("#A75B00" . 70)
      ("#F309DF" . 85)
-     ("#49483E" . 100))))
+     ("#3C3D37" . 100))))
  '(hl-bg-colors
    (quote
     ("#DEB542" "#F2804F" "#FF6E64" "#F771AC" "#9EA0E5" "#69B7F0" "#69CABF" "#B4C342")))
@@ -119,8 +119,8 @@
  '(org-support-shift-select (quote always))
  '(package-selected-packages
    (quote
-    (0blayout yaxception yasnippet xah-find powerline nginx-mode neotree multiple-cursors monokai-theme moe-theme markdown-mode log4e helm flycheck f deferred company color-theme ace-window ace-jump-mode)))
- '(pos-tip-background-color "#A6E22E")
+    (elpy 0blayout yaxception powerline nginx-mode neotree multiple-cursors moe-theme log4e flycheck f deferred company color-theme ace-window ace-jump-mode)))
+ '(pos-tip-background-color "#FFFACE")
  '(pos-tip-foreground-color "#272822")
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
@@ -129,6 +129,7 @@
  '(term-default-bg-color "#fdf6e3")
  '(term-default-fg-color "#657b83")
  '(tool-bar-mode nil)
+ '(tool-bar-style nil)
  '(vc-annotate-background nil)
  '(vc-annotate-color-map
    (quote
@@ -152,7 +153,7 @@
      (360 . "#66D9EF"))))
  '(vc-annotate-very-old-color nil)
  '(weechat-color-list
-   (unspecified "#272822" "#49483E" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0"))
+   (unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0"))
  '(xterm-color-names
    ["#eee8d5" "#dc322f" "#859900" "#b58900" "#268bd2" "#d33682" "#2aa198" "#073642"])
  '(xterm-color-names-bright
