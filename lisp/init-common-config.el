@@ -41,10 +41,10 @@
   ;;English Font
   (set-face-attribute
    'default nil
-   :font (font-spec :name "-outline-Consolas-bold-normal-normal-mono-*-*-*-*-c-*-iso10646-1"
+   :font (font-spec :name "-outline-Source Code Pro-bold-normal-normal-mono-*-*-*-*-c-*-iso10646-1"
                     :weight 'normal
                     :slant 'normal
-                    :size 11.5))
+                    :size 10.5))
   ;;Chinese Font
   (dolist (charset '(kana han symbol cjk-misc bopomofo))
     (set-fontset-font
